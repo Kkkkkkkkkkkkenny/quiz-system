@@ -86,37 +86,16 @@ python3 -m http.server 8080
 
 ### 方法一：完整注册（推荐）
 
-**第 1 步：准备数据文件** `data/my-subject.json`
+**第 1 步：** 在 `data/` 目录下新建 JSON 文件（可直接复制 `data/template.json` 修改）。
+
+**第 2 步：** 在 `datasets.json` 中添加一条记录：
 
 ```json
 {
-  "title": "我的科目名称",
-  "subtitle": "副标题（可选）",
-  "questions": [
-    {
-      "id": 1,
-      "topic": "章节名",
-      "question": "问题内容",
-      "answer": "答案内容"
-    },
-    {
-      "id": 2,
-      "topic": "章节名",
-      "question": "第二题的问题",
-      "answer": "第二题的答案\n- 支持列表\n- 也支持代码块"
-    }
-  ]
-}
-```
-
-**第 2 步：注册到系统**，在 `datasets.json` 中添加一条：
-
-```json
-{
-  "id": "my-subject",
-  "file": "data/my-subject.json",
-  "title": "我的科目",
-  "subject": "分类名称",
+  "id": "my-quiz",
+  "file": "data/my-quiz.json",
+  "title": "我的题库",
+  "subject": "分类名",
   "description": "简短说明"
 }
 ```
@@ -126,58 +105,28 @@ python3 -m http.server 8080
 | `id` | 是 | 唯一标识，用于 `?set=` 参数 |
 | `file` | 是 | JSON 文件路径 |
 | `title` | 是 | 下拉菜单中显示的名称 |
-| `subject` | 否 | 用于分组，同一科目的题库会在下拉菜单中归为一组 |
+| `subject` | 否 | 用于分组，同一分类的题库在下拉菜单中归为一组 |
 | `description` | 否 | 备用字段 |
 
-**第 3 步**：刷新页面，下拉菜单中即可选择新题库。
+**第 3 步：** 刷新页面，下拉菜单中即可选择新题库。
 
 ### 方法二：快速测试（无需注册）
 
-直接把 URL 指向你的 JSON 文件即可：
+不修改 `datasets.json`，直接 URL 加载：
 
 ```
 http://localhost:8080/?file=data/你的文件.json
 ```
 
-这种方式不需要修改 `datasets.json`，适合临时测试。
+### 格式规范
 
----
+详细的字段定义、答案格式（列表/代码块/段落）、校验方法、常见错误等，见：
 
-## 📐 数据格式参考
+> **[data/格式规范.md](data/格式规范.md)**
 
-### 答案文本支持以下格式
+新手上手可以直接复制这个模板修改：
 
-```
-- 列表项1          →  无序列表（减号 + 空格开头）
-- 列表项2
-
-1. 第一步           →  有序列表（数字 + 点 + 空格开头）
-2. 第二步
-
-```代码块```        →  代码块（三个反引号包裹）
-
-普通文字            →  段落
-```
-
-查看 `data/demo-english.json` 可参考实际写法。
-
-### 新旧格式对比
-
-带元数据的新格式（推荐）：
-
-```json
-{
-  "title": "标题",
-  "subtitle": "副标题",
-  "questions": [ ... ]
-}
-```
-
-纯数组旧格式（兼容）：
-
-```json
-[ { "id": 1, "topic": "...", "question": "?", "answer": "!" } ]
-```
+> **[data/template.json](data/template.json)**
 
 ---
 
@@ -185,17 +134,18 @@ http://localhost:8080/?file=data/你的文件.json
 
 ```
 quiz-system/
-├── index.html            # 主页面
-├── style.css             # 样式
-├── app.js                # 核心逻辑
-├── datasets.json         # 数据集清单
-├── data.json             # 旧版数据文件（兼容）
+├── index.html                # 主页面
+├── style.css                 # 样式
+├── app.js                    # 核心逻辑
+├── datasets.json             # 数据集清单（注册新题库）
+├── data.json                 # 旧版数据（兼容）
 ├── data/
 │   ├── ds-stack-queue.json   # 数据结构 35 题
-│   └── demo-english.json     # 考研英语 10 题
-├── server/               # 即插即用服务器模块
-│   ├── server.py             # 启动脚本
-│   └── 原理.md               # 网络原理讲解
+│   ├── template.json         # 空白模板，可直接复制
+│   └── 格式规范.md            # 字段定义、答案格式、校验方法
+├── server/                   # 即插即用服务器模块
+│   ├── server.py
+│   └── 原理.md
 └── README.md
 ```
 
