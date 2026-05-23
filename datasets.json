@@ -1,0 +1,18 @@
+[
+  {
+    "id": "ds-stack-queue",
+    "file": "data/ds-stack-queue.json",
+    "title": "数据结构 · 栈、队列和数组",
+    "subject": "408 数据结构",
+    "description": "35 道考研 408 数据结构核心概念题",
+    "count": 35
+  },
+  {
+    "id": "demo-english",
+    "file": "data/demo-english.json",
+    "title": "考研英语 · 高频词汇",
+    "subject": "考研英语",
+    "description": "考研英语高频词汇辨析与解题策略",
+    "count": 10
+  }
+]

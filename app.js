@@ -1,23 +1,156 @@
-let questions = [];
-let currentIndex = 0;
-let isAnswered = false;
-let answeredCount = 0;
+const state = {
+  questions: [],
+  currentIndex: 0,
+  isAnswered: false,
+  answeredCount: 0,
+  datasets: [],
+  currentDataset: null,
+  title: '知识点问答',
+  subtitle: ''
+};
 
-async function loadQuestions() {
+async function init() {
+  await loadDatasets();
+
+  const params = new URLSearchParams(window.location.search);
+
+  let file = params.get('file');
+  const setId = params.get('set');
+
+  if (file) {
+    await loadFile(file);
+  } else if (setId) {
+    const ds = state.datasets.find(d => d.id === setId);
+    if (ds) await loadFile(ds.file);
+    else await loadDefault();
+  } else {
+    await loadDefault();
+  }
+
+  populateSelector();
+}
+
+async function loadDatasets() {
   try {
-    const res = await fetch('data.json');
-    questions = await res.json();
-    renderQuestion();
-  } catch (err) {
-    document.getElementById('questionText').textContent = '数据加载失败，请检查 data.json 文件是否存在。';
+    const res = await fetch('datasets.json');
+    state.datasets = await res.json();
+  } catch {
+    state.datasets = [];
   }
 }
 
-function renderQuestion() {
-  if (!questions.length) return;
+async function loadDefault() {
+  const saved = localStorage.getItem('quizDataset');
+  if (saved) {
+    const ds = state.datasets.find(d => d.id === saved);
+    if (ds) {
+      await loadFile(ds.file);
+      return;
+    }
+  }
 
-  const q = questions[currentIndex];
-  document.getElementById('topicBadge').textContent = q.topic;
+  if (state.datasets.length > 0) {
+    await loadFile(state.datasets[0].file);
+  } else {
+    await loadFile('data.json');
+  }
+}
+
+async function loadFile(path) {
+  try {
+    const res = await fetch(path);
+    const data = await res.json();
+
+    if (Array.isArray(data)) {
+      state.questions = data;
+      state.title = '知识点问答';
+      state.subtitle = '';
+      state.currentDataset = null;
+    } else if (data.questions) {
+      state.questions = data.questions;
+      state.title = data.title || '知识点问答';
+      state.subtitle = data.subtitle || '';
+      state.currentDataset = data.id || null;
+    } else {
+      throw new Error('无效的数据格式');
+    }
+
+    state.currentIndex = 0;
+    state.isAnswered = false;
+    state.answeredCount = 0;
+    state.questions.forEach(q => delete q._answered);
+
+    updateHeader();
+    renderQuestion();
+  } catch (err) {
+    document.getElementById('questionText').textContent =
+      `加载失败：${err.message}，请检查文件路径是否正确。`;
+    document.getElementById('topicBadge').textContent = '错误';
+    document.getElementById('counter').textContent = '- / -';
+  }
+}
+
+function populateSelector() {
+  const sel = document.getElementById('datasetSelect');
+  if (!sel) return;
+
+  sel.innerHTML = '';
+
+  // group by subject
+  const groups = {};
+  for (const ds of state.datasets) {
+    const key = ds.subject || '其他';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(ds);
+  }
+
+  for (const [subject, items] of Object.entries(groups)) {
+    const optgroup = document.createElement('optgroup');
+    optgroup.label = subject;
+    for (const ds of items) {
+      const opt = document.createElement('option');
+      opt.value = ds.id;
+      opt.textContent = ds.title;
+      optgroup.appendChild(opt);
+    }
+    sel.appendChild(optgroup);
+  }
+
+  // select current
+  const id = state.currentDataset;
+  if (id && state.datasets.some(d => d.id === id)) {
+    sel.value = id;
+  }
+
+  sel.addEventListener('change', onDatasetChange);
+}
+
+function onDatasetChange() {
+  const id = document.getElementById('datasetSelect').value;
+  const ds = state.datasets.find(d => d.id === id);
+  if (!ds) return;
+  localStorage.setItem('quizDataset', id);
+  loadFile(ds.file);
+}
+
+function updateHeader() {
+  const titleEl = document.getElementById('mainTitle');
+  const subtitleEl = document.getElementById('mainSubtitle');
+
+  if (titleEl) titleEl.textContent = state.title;
+  if (subtitleEl) {
+    subtitleEl.textContent = state.subtitle;
+    subtitleEl.style.display = state.subtitle ? '' : 'none';
+  }
+
+  document.title = state.title;
+}
+
+function renderQuestion() {
+  if (!state.questions.length) return;
+
+  const q = state.questions[state.currentIndex];
+  document.getElementById('topicBadge').textContent = q.topic || '通用';
   document.getElementById('questionText').textContent = q.question;
 
   const answerDiv = document.getElementById('answerText');
@@ -26,7 +159,7 @@ function renderQuestion() {
   document.getElementById('answerArea').classList.remove('visible');
   document.getElementById('revealBtn').style.display = 'block';
   document.getElementById('revealBtn').textContent = '显示答案';
-  isAnswered = false;
+  state.isAnswered = false;
 
   updateCounter();
   updateProgress();
@@ -36,7 +169,7 @@ function renderQuestion() {
 function formatAnswer(text) {
   const lines = text.split('\n');
   let inCode = false;
-  let result = [];
+  const result = [];
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -79,28 +212,28 @@ function escHtml(str) {
 }
 
 function revealAnswer() {
-  if (isAnswered) return;
+  if (state.isAnswered) return;
   document.getElementById('answerArea').classList.add('visible');
   document.getElementById('revealBtn').style.display = 'none';
-  isAnswered = true;
-  if (!questions[currentIndex]._answered) {
-    questions[currentIndex]._answered = true;
-    answeredCount++;
+  state.isAnswered = true;
+  if (!state.questions[state.currentIndex]._answered) {
+    state.questions[state.currentIndex]._answered = true;
+    state.answeredCount++;
   }
   updateProgress();
   updateProgressText();
 }
 
 function nextQuestion() {
-  if (currentIndex < questions.length - 1) {
-    currentIndex++;
+  if (state.currentIndex < state.questions.length - 1) {
+    state.currentIndex++;
     renderQuestion();
   }
 }
 
 function prevQuestion() {
-  if (currentIndex > 0) {
-    currentIndex--;
+  if (state.currentIndex > 0) {
+    state.currentIndex--;
     renderQuestion();
   }
 }
@@ -108,28 +241,32 @@ function prevQuestion() {
 function randomQuestion() {
   let newIndex;
   do {
-    newIndex = Math.floor(Math.random() * questions.length);
-  } while (newIndex === currentIndex && questions.length > 1);
-  currentIndex = newIndex;
+    newIndex = Math.floor(Math.random() * state.questions.length);
+  } while (newIndex === state.currentIndex && state.questions.length > 1);
+  state.currentIndex = newIndex;
   renderQuestion();
 }
 
 function updateCounter() {
-  document.getElementById('counter').textContent = `${currentIndex + 1} / ${questions.length}`;
+  document.getElementById('counter').textContent =
+    `${state.currentIndex + 1} / ${state.questions.length}`;
 }
 
 function updateProgress() {
-  const pct = (answeredCount / questions.length) * 100;
+  const pct = state.questions.length
+    ? (state.answeredCount / state.questions.length) * 100
+    : 0;
   document.getElementById('progressFill').style.width = `${pct}%`;
 }
 
 function updateProgressText() {
-  const remaining = questions.length - answeredCount;
-  document.getElementById('progressText').textContent = `已掌握 ${answeredCount} 题，还剩 ${remaining} 题待复习`;
+  const remaining = state.questions.length - state.answeredCount;
+  document.getElementById('progressText').textContent =
+    `已掌握 ${state.answeredCount} 题，还剩 ${remaining} 题待复习`;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  loadQuestions();
+  init();
 
   document.getElementById('revealBtn').addEventListener('click', revealAnswer);
   document.getElementById('nextBtn').addEventListener('click', nextQuestion);
@@ -138,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.addEventListener('keydown', (e) => {
     if (e.key === ' ' || e.key === 'Enter') {
-      if (!isAnswered) {
+      if (!state.isAnswered) {
         e.preventDefault();
         revealAnswer();
       } else if (e.key === ' ') {

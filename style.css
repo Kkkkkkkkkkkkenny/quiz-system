@@ -24,6 +24,37 @@ header {
   margin-bottom: 24px;
 }
 
+.header-top {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.dataset-select {
+  padding: 6px 32px 6px 12px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #344054;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  max-width: 280px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.dataset-select:hover {
+  border-color: #98a2b3;
+}
+
+.dataset-select:focus {
+  outline: none;
+  border-color: #4facfe;
+  box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.15);
+}
+
 header h1 {
   font-size: 28px;
   color: #2c3e50;
@@ -239,5 +270,14 @@ header h1 {
 
   .answer-text {
     font-size: 15px;
+  }
+
+  .header-top {
+    justify-content: center;
+  }
+
+  .dataset-select {
+    max-width: 100%;
+    width: 100%;
   }
 }
