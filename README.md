@@ -10,10 +10,17 @@
 
 ```bash
 cd quiz-system
-python3 -m http.server 8080
+server/server.py
 ```
 
-浏览器打开 `http://localhost:8080`
+浏览器打开打印的地址（本机 `http://localhost:8080`，局域网设备用 `http://192.168.x.x:8080`）。
+
+也可以直接用 Python 自带服务器：
+
+```bash
+cd quiz-system
+python3 -m http.server 8080
+```
 
 ---
 
@@ -58,7 +65,7 @@ python3 -m http.server 8080
 |------|---------|
 | 按数据集 ID 加载 | `http://localhost:8080/?set=ds-stack-queue` |
 | 直接加载文件 | `http://localhost:8080/?file=data/demo-english.json` |
-| 加载任意位置文件 | `http://localhost:8080/?file=https://example.com/题.json` |
+| 加载远程文件 | `http://localhost:8080/?file=https://example.com/题.json` |
 
 参考 `datasets.json` 中每个数据集的 `id` 字段来使用 `?set=` 参数。
 
@@ -178,17 +185,21 @@ http://localhost:8080/?file=data/你的文件.json
 
 ```
 quiz-system/
-├── index.html          # 主页面
-├── style.css           # 样式
-├── app.js              # 核心逻辑（多数据集加载、导航、键盘快捷键）
-├── datasets.json       # 数据集清单（在此注册新题库）
-├── data/               # 题库存放目录
-│   ├── ds-stack-queue.json   # 408 数据结构·栈、队列和数组（35 题）
-│   └── demo-english.json     # 考研英语·高频词汇（10 题）
-├── data.json           # 旧版数据文件（兼容）
-├── server.py           # 简易局域网服务器
+├── index.html            # 主页面
+├── style.css             # 样式
+├── app.js                # 核心逻辑
+├── datasets.json         # 数据集清单
+├── data.json             # 旧版数据文件（兼容）
+├── data/
+│   ├── ds-stack-queue.json   # 数据结构 35 题
+│   └── demo-english.json     # 考研英语 10 题
+├── server/               # 即插即用服务器模块
+│   ├── server.py             # 启动脚本
+│   └── 原理.md               # 网络原理讲解
 └── README.md
 ```
+
+`server/` 模块源自 [simple-server](https://github.com/Kkkkkkkkkkkkenny/quiz-system) 项目，是一个独立的即插即用静态文件服务器，可单独使用也可嵌入其他项目。
 
 ---
 
@@ -196,13 +207,15 @@ quiz-system/
 
 **为什么需要 HTTP 服务器？为什么不能直接双击打开 HTML？**
 
-因为系统通过 `fetch` 加载外部 JSON 文件，浏览器的安全策略限制 `file://` 协议下的跨文件请求。用任意 HTTP 服务器启动即可：
+因为系统通过 `fetch` 加载外部 JSON 文件，浏览器的安全策略限制 `file://` 协议下的跨文件请求：
 
 ```bash
-python3 -m http.server 8080     # 方案一：Python 自带
-python3 server.py               # 方案二：本项目的扩展版服务器（支持局域网访问）
+server/server.py                # 方案一：自带服务器模块
+python3 -m http.server 8080     # 方案二：Python 自带
 npx serve .                     # 方案三：Node.js
 ```
+
+关于网络部署的原理（局域网访问、NAT 穿透、Tailscale 组网等），详见 [server/原理.md](server/原理.md)。
 
 **下拉菜单里没有看到我的新题库？**
 
@@ -214,4 +227,4 @@ npx serve .                     # 方案三：Node.js
 
 **进度数据存在哪里？**
 
-仅存在于当前浏览器的内存中，刷新页面后重置。未来计划支持本地存储持久化。
+仅存在于当前浏览器的内存中，刷新页面后重置。
