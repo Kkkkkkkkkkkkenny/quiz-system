@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>408 数据结构 - 知识点问答</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📚 数据结构知识点问答</h1>
+      <p class="subtitle">第三章 · 栈、队列和数组</p>
+    </header>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="card" id="card">
+      <div class="card-header">
+        <span class="topic-badge" id="topicBadge">栈</span>
+        <span class="card-counter" id="counter">1 / 35</span>
+      </div>
+      <div class="card-body">
+        <div class="question-area" id="questionArea">
+          <p class="question-label">💡 问题</p>
+          <p class="question-text" id="questionText"></p>
+        </div>
+        <div class="divider"></div>
+        <div class="answer-area" id="answerArea">
+          <p class="answer-label">📖 答案</p>
+          <div class="answer-text" id="answerText"></div>
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="btn btn-primary" id="revealBtn">显示答案</button>
+      </div>
+    </div>
+
+    <div class="nav-controls">
+      <button class="btn btn-secondary" id="prevBtn">⬅ 上一题</button>
+      <button class="btn btn-secondary" id="randomBtn">🎲 随机</button>
+      <button class="btn btn-secondary" id="nextBtn">下一题 ➡</button>
+    </div>
+
+    <div class="progress-text" id="progressText"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

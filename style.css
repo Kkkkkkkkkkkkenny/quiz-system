@@ -1,0 +1,243 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 20px;
+}
+
+.container {
+  max-width: 720px;
+  width: 100%;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+header h1 {
+  font-size: 28px;
+  color: #2c3e50;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  font-size: 15px;
+  color: #7f8c8d;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 3px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #eee;
+}
+
+.topic-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  background: #4facfe;
+  color: #fff;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.card-counter {
+  font-size: 14px;
+  color: #95a5a6;
+  font-weight: 500;
+}
+
+.card-body {
+  padding: 28px 24px 20px;
+}
+
+.question-area {
+  margin-bottom: 16px;
+}
+
+.question-label {
+  font-size: 13px;
+  color: #4facfe;
+  font-weight: 600;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.question-text {
+  font-size: 18px;
+  line-height: 1.6;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.divider {
+  height: 1px;
+  background: #eee;
+  margin: 16px 0;
+}
+
+.answer-area {
+  display: none;
+}
+
+.answer-area.visible {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.answer-label {
+  font-size: 13px;
+  color: #00b894;
+  font-weight: 600;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.answer-text {
+  font-size: 16px;
+  line-height: 1.8;
+  color: #2d3436;
+}
+
+.answer-text code {
+  display: block;
+  background: #f0f0f0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 8px 0;
+  font-size: 14px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+}
+
+.answer-text ul, .answer-text ol {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+
+.answer-text li {
+  margin-bottom: 4px;
+}
+
+.card-actions {
+  padding: 0 24px 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.btn {
+  padding: 10px 28px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: #4facfe;
+  color: #fff;
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+}
+
+.btn-primary:hover {
+  background: #3d8ef5;
+  box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+}
+
+.btn-secondary {
+  background: #fff;
+  color: #555;
+  border: 1px solid #ddd;
+  flex: 1;
+}
+
+.btn-secondary:hover {
+  background: #f8f9fa;
+  border-color: #ccc;
+}
+
+.nav-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.progress-text {
+  text-align: center;
+  font-size: 14px;
+  color: #95a5a6;
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 20px 12px;
+  }
+
+  header h1 {
+    font-size: 22px;
+  }
+
+  .card-body {
+    padding: 20px 16px;
+  }
+
+  .question-text {
+    font-size: 16px;
+  }
+
+  .answer-text {
+    font-size: 15px;
+  }
+}
