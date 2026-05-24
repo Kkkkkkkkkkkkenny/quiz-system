@@ -14,13 +14,5 @@
     "subject": "408 数据结构",
     "description": "135 道考研 408 数据结构核心概念题（8 章全覆盖）",
     "count": 135
-  },
-  {
-    "id": "ds-stack-queue",
-    "file": "data/ds-stack-queue.json",
-    "title": "数据结构 · 栈、队列和数组",
-    "subject": "408 数据结构",
-    "description": "35 道考研 408 数据结构核心概念题",
-    "count": 35
   }
 ]
