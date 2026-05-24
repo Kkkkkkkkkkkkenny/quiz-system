@@ -2,7 +2,7 @@
   {
     "id": "ds",
     "file": "data/ds.json",
-    "title": "408 数据结构",
+    "title": "408 数据结构 · 究极粒度",
     "subject": "408 数据结构",
     "description": "537 道考研 408 数据结构究极低粒度概念题（8 章全覆盖）",
     "count": 537
@@ -10,9 +10,25 @@
   {
     "id": "os",
     "file": "data/os.json",
-    "title": "408 操作系统",
+    "title": "408 操作系统 · 究极粒度",
     "subject": "408 操作系统",
     "description": "530 道考研 408 操作系统究极低粒度概念题（5 章全覆盖）",
     "count": 530
+  },
+  {
+    "id": "ds-v1",
+    "file": "data/ds-v1.json",
+    "title": "408 数据结构 · 基础版",
+    "subject": "408 数据结构",
+    "description": "135 道考研 408 数据结构核心概念题（8 章全覆盖）",
+    "count": 135
+  },
+  {
+    "id": "os-v1",
+    "file": "data/os-v1.json",
+    "title": "408 操作系统 · 基础版",
+    "subject": "408 操作系统",
+    "description": "117 道考研 408 操作系统核心概念题（5 章全覆盖）",
+    "count": 117
   }
 ]
