@@ -167,7 +167,137 @@ function renderQuestion() {
 }
 
 function formatAnswer(text) {
-  return marked.parse(text, { breaks: true, gfm: true });
+  var parts = [], buf = '', inCode = false;
+  var lines = text.split('\n');
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (line.trim().startsWith('```')) {
+      if (inCode) {
+        parts.push({ t: 'code', c: buf });
+        buf = '';
+        inCode = false;
+      } else {
+        if (buf) parts.push({ t: 'text', c: buf });
+        buf = '';
+        inCode = true;
+      }
+      continue;
+    }
+    buf += line + '\n';
+  }
+  if (inCode) parts.push({ t: 'code', c: buf });
+  else if (buf) parts.push({ t: 'text', c: buf });
+
+  var out = [];
+  for (var i = 0; i < parts.length; i++) {
+    if (parts[i].t === 'code') {
+      out.push('<pre><code>' + escHtml(parts[i].c.replace(/\n$/, '')) + '</code></pre>');
+    } else {
+      out.push(renderBlocks(parts[i].c));
+    }
+  }
+  return out.join('\n');
+}
+
+function renderBlocks(text) {
+  var lines = text.split('\n');
+  var out = [];
+  var inTable = false, tableRows = [];
+  var inList = false, listTag = '', listItems = [];
+
+  function flushTable() {
+    if (!inTable) return;
+    out.push('<table>');
+    for (var r = 0; r < tableRows.length; r++) {
+      var cells = tableRows[r].split('|');
+      // 去掉首尾空单元格
+      if (cells.length > 0 && cells[0].trim() === '') cells.shift();
+      if (cells.length > 0 && cells[cells.length - 1].trim() === '') cells.pop();
+      // 跳过分隔行 (|---|)
+      if (r === 1 && /^[-:\s]+$/.test(cells[0].trim())) continue;
+      var tag = r === 0 ? 'th' : 'td';
+      out.push('<tr>');
+      for (var c = 0; c < cells.length; c++) {
+        out.push('<' + tag + '>' + renderInline(cells[c].trim()) + '</' + tag + '>');
+      }
+      out.push('</tr>');
+    }
+    out.push('</table>');
+    inTable = false;
+    tableRows = [];
+  }
+
+  function flushList() {
+    if (!inList) return;
+    out.push('<' + listTag + '>' + listItems.join('') + '</' + listTag + '>');
+    inList = false;
+    listItems = [];
+  }
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    var trimmed = line.trim();
+
+    if (trimmed === '') {
+      flushTable();
+      flushList();
+      continue;
+    }
+
+    // Table
+    if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+      flushList();
+      // 如果是分隔行，标记但保留
+      tableRows.push(trimmed);
+      if (!inTable) {
+        inTable = true;
+        // 检查下一行是否是分隔行
+        if (i + 1 < lines.length && /^\|[-:\s|]+\|$/.test(lines[i + 1].trim())) {
+          // 表头行，不用特殊处理
+        }
+      }
+      continue;
+    }
+
+    // Unordered list
+    var ulMatch = trimmed.match(/^[-*+]\s(.+)/);
+    if (ulMatch) {
+      flushTable();
+      if (!inList || listTag !== 'ul') { flushList(); inList = true; listTag = 'ul'; }
+      listItems.push('<li>' + renderInline(ulMatch[1]) + '</li>');
+      continue;
+    }
+
+    // Ordered list
+    var olMatch = trimmed.match(/^\d+\.\s(.+)/);
+    if (olMatch) {
+      flushTable();
+      if (!inList || listTag !== 'ol') { flushList(); inList = true; listTag = 'ol'; }
+      listItems.push('<li>' + renderInline(olMatch[1]) + '</li>');
+      continue;
+    }
+
+    // Paragraph
+    flushTable();
+    flushList();
+    out.push('<p>' + renderInline(line) + '</p>');
+  }
+
+  flushTable();
+  flushList();
+  return out.join('\n');
+}
+
+function renderInline(text) {
+  // 必须优先转义 HTML
+  var s = escHtml(text);
+  // 行内代码
+  s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // 粗体 **text**
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  // 换行
+  s = s.replace(/\n/g, '<br>');
+  return s;
 }
 
 function revealAnswer() {
