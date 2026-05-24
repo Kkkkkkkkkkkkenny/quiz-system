@@ -173,15 +173,28 @@ header h1 {
   color: #2d3436;
 }
 
-.answer-text code {
-  display: block;
+.answer-text pre {
   background: #f0f0f0;
   padding: 12px 16px;
   border-radius: 8px;
   margin: 8px 0;
-  font-size: 14px;
   overflow-x: auto;
+}
+
+.answer-text pre code {
+  font-size: 14px;
   white-space: pre-wrap;
+  font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+  background: none;
+  padding: 0;
+  border-radius: 0;
+}
+
+.answer-text code {
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
   font-family: "SF Mono", "Fira Code", "Consolas", monospace;
 }
 
@@ -192,6 +205,32 @@ header h1 {
 
 .answer-text li {
   margin-bottom: 4px;
+}
+
+.answer-text table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 10px 0;
+  font-size: 14px;
+}
+
+.answer-text th, .answer-text td {
+  border: 1px solid #d0d5dd;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.answer-text th {
+  background: #f8f9fa;
+  font-weight: 600;
+}
+
+.answer-text tr:nth-child(even) {
+  background: #f8f9fa;
+}
+
+.answer-text p {
+  margin: 6px 0;
 }
 
 .card-actions {

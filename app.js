@@ -167,48 +167,7 @@ function renderQuestion() {
 }
 
 function formatAnswer(text) {
-  const lines = text.split('\n');
-  let inCode = false;
-  const result = [];
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-
-    if (trimmed.startsWith('```')) {
-      result.push(inCode ? '</code>' : '<code>');
-      inCode = !inCode;
-      continue;
-    }
-
-    if (inCode) {
-      result.push(line + '\n');
-      continue;
-    }
-
-    if (trimmed === '') {
-      result.push('');
-      continue;
-    }
-
-    if (trimmed.startsWith('- ')) {
-      result.push(`<li>${escHtml(trimmed.slice(2))}</li>`);
-      continue;
-    }
-
-    if (/^\d+\.\s/.test(trimmed)) {
-      result.push(`<li>${escHtml(trimmed.replace(/^\d+\.\s/, ''))}</li>`);
-      continue;
-    }
-
-    result.push(`<p>${escHtml(line)}</p>`);
-  }
-
-  if (inCode) result.push('</code>');
-  return result.join('\n');
-}
-
-function escHtml(str) {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return marked.parse(text, { breaks: true, gfm: true });
 }
 
 function revealAnswer() {
