@@ -236,7 +236,7 @@ function renderQuestion() {
 
   var q = state.questions[state.currentIndex];
   getById('topicBadge').textContent = (q.chapter ? q.chapter + '  ·  ' : '') + (q.topic || '通用');
-  getById('questionText').textContent = q.question;
+  getById('questionText').innerHTML = renderLatex(q.question);
 
   var answerDiv = getById('answerText');
   answerDiv.innerHTML = formatAnswer(q.answer);
@@ -250,6 +250,132 @@ function renderQuestion() {
   updateProgress();
   updateProgressText();
   updateBookmarkBtn();
+}
+
+/* ====== LaTeX 数学公式渲染 ====== */
+
+function renderLatex(text) {
+  if (!text) return text;
+  return text.replace(/\$\$([^$]+)\$\$/g, function(m, expr) {
+    return '<div class="math math-display">' + renderMathExpr(expr.trim()) + '</div>';
+  }).replace(/\$(?!\$)([^$]+?)\$(?!\$)/g, function(m, expr) {
+    return '<span class="math math-inline">' + renderMathExpr(expr.trim()) + '</span>';
+  });
+}
+
+var GREEK = {
+  'alpha':'α','beta':'β','gamma':'γ','delta':'δ','epsilon':'ε',
+  'zeta':'ζ','eta':'η','theta':'θ','iota':'ι','kappa':'κ',
+  'lambda':'λ','mu':'μ','nu':'ν','xi':'ξ','pi':'π','rho':'ρ',
+  'sigma':'σ','tau':'τ','upsilon':'υ','phi':'φ','chi':'χ',
+  'psi':'ψ','omega':'ω',
+  'Alpha':'Α','Beta':'Β','Gamma':'Γ','Delta':'Δ',
+  'Theta':'Θ','Lambda':'Λ','Pi':'Π','Sigma':'Σ','Omega':'Ω'
+};
+
+var SYMBOLS = {
+  'leq':'≤','ge':'≥','geq':'≥','ne':'≠','neq':'≠',
+  'times':'×','cdot':'·','div':'÷','pm':'±',
+  'infty':'∞','to':'→','rightarrow':'→','leftarrow':'←','Rightarrow':'⇒',
+  'approx':'≈','equiv':'≡','sim':'∼',
+  'sum':'∑','prod':'∏','int':'∫','oint':'∮',
+  'forall':'∀','exists':'∃','in':'∈','notin':'∉',
+  'subset':'⊂','subseteq':'⊆','supset':'⊃',
+  'cup':'∪','cap':'∩','emptyset':'∅',
+  'log':'log','ln':'ln','lg':'lg','max':'max','min':'min'
+};
+
+function renderMathExpr(expr) {
+  var i = 0, len = expr.length;
+
+  function peek() { return i < len ? expr.charAt(i) : ''; }
+  function next() { return expr.charAt(i++); }
+
+  function parseGroup() {
+    while (peek() === ' ') next();
+    if (peek() === '{') {
+      next();
+      var depth = 1, start = i;
+      while (i < len && depth > 0) {
+        var ch = expr.charAt(i++);
+        if (ch === '{') depth++;
+        else if (ch === '}') depth--;
+      }
+      return expr.substring(start, i - 1);
+    }
+    if (peek() === '\\') {
+      next();
+      var cmd = '';
+      while (i < len && /[a-zA-Z]/.test(peek())) cmd += next();
+      if (GREEK.hasOwnProperty(cmd)) return GREEK[cmd];
+      if (SYMBOLS.hasOwnProperty(cmd)) return SYMBOLS[cmd];
+      return '\\' + cmd;
+    }
+    return next();
+  }
+
+  function parseExpr(until) {
+    var result = '';
+    while (i < len) {
+      var ch = peek();
+      if (until && ch === until) break;
+      if (ch === ' ') { result += ' '; next(); continue; }
+
+      if (ch === '\\') {
+        next();
+        var cmd = '';
+        while (i < len && /[a-zA-Z]/.test(peek())) cmd += next();
+        if (cmd === 'frac') {
+          var num = parseGroup();
+          var den = parseGroup();
+          result += '<span class="math-frac"><span class="math-frac-top">' + renderMathExpr(num) + '</span><span class="math-frac-bot">' + renderMathExpr(den) + '</span></span>';
+        } else if (cmd === 'sqrt') {
+          var arg = parseGroup();
+          result += '<span class="math-sqrt">√<span class="math-sqrt-inner">' + renderMathExpr(arg) + '</span></span>';
+        } else if (cmd === 'sum' || cmd === 'prod' || cmd === 'int' || cmd === 'oint') {
+          var sym = SYMBOLS[cmd] || cmd;
+          var sub = '', sup = '';
+          if (peek() === '_') { next(); sub = parseGroup(); }
+          if (peek() === '^') { next(); sup = parseGroup(); }
+          result += '<span class="math-op">' + sym + '</span>';
+          if (sub) result += '<sub>' + renderMathExpr(sub) + '</sub>';
+          if (sup) result += '<sup>' + renderMathExpr(sup) + '</sup>';
+        } else if (cmd === 'log' || cmd === 'ln' || cmd === 'lg' || cmd === 'max' || cmd === 'min') {
+          result += cmd;
+        } else if (GREEK.hasOwnProperty(cmd)) {
+          result += GREEK[cmd];
+        } else if (SYMBOLS.hasOwnProperty(cmd)) {
+          result += SYMBOLS[cmd];
+        } else {
+          result += cmd;
+        }
+        continue;
+      }
+
+      if (ch === '_') {
+        next();
+        result += '<sub>' + renderMathExpr(parseGroup()) + '</sub>';
+        continue;
+      }
+
+      if (ch === '^') {
+        next();
+        result += '<sup>' + renderMathExpr(parseGroup()) + '</sup>';
+        continue;
+      }
+
+      if (ch === '{') {
+        result += parseGroup();
+        continue;
+      }
+
+      if (ch === '}') break;
+      result += next();
+    }
+    return result;
+  }
+
+  return parseExpr('');
 }
 
 function escHtml(str) {
@@ -378,6 +504,7 @@ function renderBlocks(text) {
 
 function renderInline(text) {
   var s = escHtml(text);
+  s = renderLatex(s);
   s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   s = s.replace(/\n/g, '<br>');
@@ -489,7 +616,7 @@ function buildSidebar() {
       var currentClass = idx === state.currentIndex ? ' current' : '';
       html += '<div class="sidebar-item' + doneClass + currentClass + '" data-index="' + idx + '">';
       html += '<span class="sidebar-item-num">' + (idx + 1) + '.</span>';
-      html += '<span class="sidebar-item-text">' + escHtml(truncate(question.question, 50)) + '</span>';
+      html += '<span class="sidebar-item-text">' + renderLatex(escHtml(truncate(question.question, 50))) + '</span>';
       html += '<span class="sidebar-item-star">★</span>';
       if (question._answered) html += '<span class="sidebar-item-check">&#10003;</span>';
       html += '</div>';

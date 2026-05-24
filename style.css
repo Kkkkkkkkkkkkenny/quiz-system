@@ -297,6 +297,54 @@ header h1 {
   margin: 6px 0;
 }
 
+/* LaTeX 数学公式 */
+.math-inline {
+  font-family: "Latin Modern Math", "Cambria Math", "Times New Roman", serif;
+  font-style: italic;
+  padding: 0 2px;
+}
+
+.math-display {
+  display: block;
+  text-align: center;
+  margin: 12px 0;
+  font-family: "Latin Modern Math", "Cambria Math", "Times New Roman", serif;
+  font-style: italic;
+  font-size: 1.05em;
+}
+
+.math-frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  line-height: 1.1;
+  margin: 0 2px;
+}
+
+.math-frac-top {
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 1px;
+}
+
+.math-frac-bot {
+  padding-top: 1px;
+}
+
+.math-sqrt {
+  display: inline-flex;
+  align-items: stretch;
+}
+
+.math-sqrt-inner {
+  text-decoration: overline;
+  padding-left: 2px;
+}
+
+.math-op {
+  font-size: 1.2em;
+}
+
 .card-actions {
   padding: 0 24px 20px;
   display: flex;
