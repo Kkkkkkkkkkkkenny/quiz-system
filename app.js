@@ -166,37 +166,45 @@ function renderQuestion() {
   updateProgressText();
 }
 
-function formatAnswer(text) {
-  var parts = [], buf = '', inCode = false;
-  var lines = text.split('\n');
-  for (var i = 0; i < lines.length; i++) {
-    var line = lines[i];
-    if (line.trim().startsWith('```')) {
-      if (inCode) {
-        parts.push({ t: 'code', c: buf });
-        buf = '';
-        inCode = false;
-      } else {
-        if (buf) parts.push({ t: 'text', c: buf });
-        buf = '';
-        inCode = true;
-      }
-      continue;
-    }
-    buf += line + '\n';
-  }
-  if (inCode) parts.push({ t: 'code', c: buf });
-  else if (buf) parts.push({ t: 'text', c: buf });
+function escHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 
-  var out = [];
-  for (var i = 0; i < parts.length; i++) {
-    if (parts[i].t === 'code') {
-      out.push('<pre><code>' + escHtml(parts[i].c.replace(/\n$/, '')) + '</code></pre>');
-    } else {
-      out.push(renderBlocks(parts[i].c));
+function formatAnswer(text) {
+  try {
+    var parts = [], buf = '', inCode = false;
+    var lines = text.split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      if (line.trim().startsWith('```')) {
+        if (inCode) {
+          parts.push({ t: 'code', c: buf });
+          buf = '';
+          inCode = false;
+        } else {
+          if (buf) parts.push({ t: 'text', c: buf });
+          buf = '';
+          inCode = true;
+        }
+        continue;
+      }
+      buf += line + '\n';
     }
+    if (inCode) parts.push({ t: 'code', c: buf });
+    else if (buf) parts.push({ t: 'text', c: buf });
+
+    var out = [];
+    for (var i = 0; i < parts.length; i++) {
+      if (parts[i].t === 'code') {
+        out.push('<pre><code>' + escHtml(parts[i].c.replace(/\n$/, '')) + '</code></pre>');
+      } else {
+        out.push(renderBlocks(parts[i].c));
+      }
+    }
+    return out.join('\n');
+  } catch (e) {
+    return '<p style="color:red">渲染错误: ' + e.message + '</p><p>' + escHtml(text) + '</p>';
   }
-  return out.join('\n');
 }
 
 function renderBlocks(text) {
