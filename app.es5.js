@@ -235,7 +235,7 @@ function renderQuestion() {
   if (!state.questions.length) return;
 
   var q = state.questions[state.currentIndex];
-  getById('topicBadge').textContent = q.topic || '通用';
+  getById('topicBadge').textContent = (q.chapter ? q.chapter + '  ·  ' : '') + (q.topic || '通用');
   getById('questionText').textContent = q.question;
 
   var answerDiv = getById('answerText');
@@ -456,15 +456,18 @@ function buildSidebar() {
   var query = (getById('sidebarSearch').value || '').trim().toLowerCase();
   var hasQuery = query.length > 0;
   var html = '';
-  var topics = {};
   var matched = 0;
   var datasetKey = state.currentDataset || '__default__';
 
+  // 按 chapter → topic 组织数据
+  var chapters = {};
   for (var i = 0; i < state.questions.length; i++) {
     var q = state.questions[i];
+    var chapter = q.chapter || '其他';
     var topic = q.topic || '通用';
-    if (!topics[topic]) topics[topic] = [];
-    topics[topic].push({ index: i, q: q });
+    if (!chapters[chapter]) chapters[chapter] = {};
+    if (!chapters[chapter][topic]) chapters[chapter][topic] = [];
+    chapters[chapter][topic].push({ index: i, q: q });
   }
 
   // 收藏分组（置顶）
@@ -472,27 +475,18 @@ function buildSidebar() {
   if (!hasQuery) {
     for (var i = 0; i < state.questions.length; i++) {
       var q = state.questions[i];
-      if (q.id != null && isBookmarked(q.id)) {
-        bookmarkItems.push({ index: i, q: q });
-      }
+      if (q.id != null && isBookmarked(q.id)) bookmarkItems.push({ index: i, q: q });
     }
   }
 
   if (bookmarkItems.length > 0) {
-    html += '<div class="sidebar-group">';
-    html += '<div class="sidebar-group-header">';
-    html += '<span class="sidebar-group-arrow">&#9660;</span>';
-    html += '<span class="sidebar-group-title">⭐ 收藏</span>';
-    html += '<span class="sidebar-group-count">' + bookmarkItems.length + '</span>';
-    html += '</div>';
-    html += '<div class="sidebar-group-body">';
-
+    html += '<div class="sidebar-chapter">';
+    html += '<div class="sidebar-chapter-header">⭐ 收藏</div>';
     for (var k = 0; k < bookmarkItems.length; k++) {
       var idx = bookmarkItems[k].index;
       var question = bookmarkItems[k].q;
       var doneClass = question._answered ? ' done' : '';
       var currentClass = idx === state.currentIndex ? ' current' : '';
-
       html += '<div class="sidebar-item' + doneClass + currentClass + '" data-index="' + idx + '">';
       html += '<span class="sidebar-item-num">' + (idx + 1) + '.</span>';
       html += '<span class="sidebar-item-text">' + escHtml(truncate(question.question, 50)) + '</span>';
@@ -500,79 +494,84 @@ function buildSidebar() {
       if (question._answered) html += '<span class="sidebar-item-check">&#10003;</span>';
       html += '</div>';
     }
-
-    html += '</div></div>';
+    html += '</div>';
     matched += bookmarkItems.length;
   }
 
-  var topicKeys = Object.keys(topics);
-  for (var t = 0; t < topicKeys.length; t++) {
-    var topic = topicKeys[t];
-    var items = topics[topic];
-    var filtered = [];
+  var chapterKeys = Object.keys(chapters);
+  for (var c = 0; c < chapterKeys.length; c++) {
+    var chapter = chapterKeys[c];
+    var topics = chapters[chapter];
+    var chapterMatched = 0;
+    var chapterHtml = '';
 
-    for (var j = 0; j < items.length; j++) {
-      var item = items[j];
-      var text = (item.q.question + ' ' + (item.q.topic || '')).toLowerCase();
-      if (!hasQuery || text.indexOf(query) !== -1) {
-        filtered.push(item);
+    var topicKeys = Object.keys(topics);
+    for (var t = 0; t < topicKeys.length; t++) {
+      var topic = topicKeys[t];
+      var items = topics[topic];
+      var filtered = [];
+
+      for (var j = 0; j < items.length; j++) {
+        var item = items[j];
+        var text = (item.q.question + ' ' + (item.q.topic || '')).toLowerCase();
+        if (!hasQuery || text.indexOf(query) !== -1) filtered.push(item);
       }
+
+      if (filtered.length === 0) continue;
+      chapterMatched += filtered.length;
+
+      var groupKey = datasetKey + '_' + topic;
+      var isCollapsed = hasQuery ? false : sidebarCollapsed[groupKey] !== false;
+      var collapsedClass = isCollapsed ? ' collapsed' : '';
+
+      chapterHtml += '<div class="sidebar-group' + collapsedClass + '" data-group="' + escHtml(groupKey) + '">';
+      chapterHtml += '<div class="sidebar-group-header">';
+      chapterHtml += '<span class="sidebar-group-arrow">&#9660;</span>';
+      chapterHtml += '<span class="sidebar-group-title">' + escHtml(topic) + '</span>';
+      chapterHtml += '<span class="sidebar-group-count">' + filtered.length + '</span>';
+      chapterHtml += '</div>';
+      chapterHtml += '<div class="sidebar-group-body">';
+
+      for (var k = 0; k < filtered.length; k++) {
+        var idx = filtered[k].index;
+        var question = filtered[k].q;
+        var doneClass = question._answered ? ' done' : '';
+        var currentClass = idx === state.currentIndex ? ' current' : '';
+        var bm = question.id != null && isBookmarked(question.id);
+
+        chapterHtml += '<div class="sidebar-item' + doneClass + currentClass + '" data-index="' + idx + '">';
+        chapterHtml += '<span class="sidebar-item-num">' + (idx + 1) + '.</span>';
+        chapterHtml += '<span class="sidebar-item-text">' + escHtml(truncate(question.question, 50)) + '</span>';
+        if (bm) chapterHtml += '<span class="sidebar-item-star">★</span>';
+        if (question._answered) chapterHtml += '<span class="sidebar-item-check">&#10003;</span>';
+        chapterHtml += '</div>';
+      }
+
+      chapterHtml += '</div></div>';
     }
 
-    if (filtered.length === 0) continue;
-    matched += filtered.length;
+    if (chapterMatched === 0) continue;
+    matched += chapterMatched;
 
-    var groupKey = datasetKey + '_' + topic;
-    var isCollapsed = hasQuery ? false : sidebarCollapsed[groupKey] !== false;
-    var collapsedClass = isCollapsed ? ' collapsed' : '';
-
-    html += '<div class="sidebar-group' + collapsedClass + '" data-group="' + escHtml(groupKey) + '">';
-    html += '<div class="sidebar-group-header">';
-    html += '<span class="sidebar-group-arrow">&#9660;</span>';
-    html += '<span class="sidebar-group-title">' + escHtml(topic) + '</span>';
-    html += '<span class="sidebar-group-count">' + filtered.length + '</span>';
+    html += '<div class="sidebar-chapter">';
+    html += '<div class="sidebar-chapter-header">' + escHtml(chapter) + '</div>';
+    html += chapterHtml;
     html += '</div>';
-    html += '<div class="sidebar-group-body">';
-
-    for (var k = 0; k < filtered.length; k++) {
-      var idx = filtered[k].index;
-      var question = filtered[k].q;
-      var isCurrent = idx === state.currentIndex;
-      var doneClass = question._answered ? ' done' : '';
-      var currentClass = isCurrent ? ' current' : '';
-      var bm = question.id != null && isBookmarked(question.id);
-
-      html += '<div class="sidebar-item' + doneClass + currentClass + '" data-index="' + idx + '">';
-      html += '<span class="sidebar-item-num">' + (idx + 1) + '.</span>';
-      html += '<span class="sidebar-item-text">' + escHtml(truncate(question.question, 50)) + '</span>';
-      if (bm) html += '<span class="sidebar-item-star">★</span>';
-      if (question._answered) html += '<span class="sidebar-item-check">&#10003;</span>';
-      html += '</div>';
-    }
-
-    html += '</div></div>';
   }
 
   list.innerHTML = html;
   getById('sidebarCount').textContent = matched + ' / ' + state.questions.length;
 
-  // Bind group header click
   var headers = list.querySelectorAll('.sidebar-group-header');
   for (var i = 0; i < headers.length; i++) {
     headers[i].addEventListener('click', onGroupHeaderClick);
   }
-
-  // Bind item click
   var items = list.querySelectorAll('.sidebar-item');
   for (var i = 0; i < items.length; i++) {
     items[i].addEventListener('click', onSidebarItemClick);
   }
-
-  if (hasQuery) {
-    list.classList.add('sidebar-search-active');
-  } else {
-    list.classList.remove('sidebar-search-active');
-  }
+  if (hasQuery) list.classList.add('sidebar-search-active');
+  else list.classList.remove('sidebar-search-active');
 }
 
 function truncate(str, max) {
