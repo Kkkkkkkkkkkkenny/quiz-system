@@ -68,18 +68,39 @@ function getById(id) {
   return document.getElementById(id);
 }
 
-/* ====== 收藏功能 ====== */
+/* ====== 收藏功能（API + localStorage 降级） ====== */
 
 function loadBookmarks() {
+  // 先读 localStorage 做即时展示
   try {
     var saved = localStorage.getItem('quizBookmarks');
     if (saved) state.bookmarkedIds = JSON.parse(saved);
     if (!Array.isArray(state.bookmarkedIds)) state.bookmarkedIds = [];
   } catch(e) { state.bookmarkedIds = []; }
+
+  // 再尝试从服务端拉取（覆盖本地）
+  fetch('/api/bookmarks').then(function(res) {
+    if (!res.ok) throw new Error('API unavailable');
+    return res.json();
+  }).then(function(ids) {
+    if (Array.isArray(ids)) {
+      state.bookmarkedIds = ids;
+      try { localStorage.setItem('quizBookmarks', JSON.stringify(ids)); } catch(e) {}
+    }
+    if (state.questions.length) updateBookmarkBtn();
+  }).catch(function() {});
 }
 
 function saveBookmarks() {
+  // 存 localStorage（离线可用）
   try { localStorage.setItem('quizBookmarks', JSON.stringify(state.bookmarkedIds)); } catch(e) {}
+
+  // 同步到服务端（静默失败）
+  fetch('/api/bookmarks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids: state.bookmarkedIds })
+  }).catch(function() {});
 }
 
 function isBookmarked(id) {

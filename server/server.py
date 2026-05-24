@@ -11,6 +11,7 @@ simple-server — 把任意文件/目录变成局域网可访问的网页服务�
 
 import argparse
 import http.server
+import json
 import os
 import socket
 import subprocess
@@ -71,6 +72,71 @@ class QuietHandler(http.server.SimpleHTTPRequestHandler):
         pass
 
 
+class ApiHandler(http.server.SimpleHTTPRequestHandler):
+    """支持 /api/bookmarks 接口的静态文件服务器"""
+
+    BOOKMARKS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'bookmarks.json')
+
+    def _load_bookmarks(self):
+        try:
+            if os.path.exists(self.BOOKMARKS_FILE):
+                with open(self.BOOKMARKS_FILE, 'r') as f:
+                    data = json.load(f)
+                    if isinstance(data, list):
+                        return data
+            return []
+        except Exception:
+            return []
+
+    def _save_bookmarks(self, ids):
+        try:
+            with open(self.BOOKMARKS_FILE, 'w') as f:
+                json.dump(ids, f)
+            return True
+        except Exception:
+            return False
+
+    def do_GET(self):
+        if self.path == '/api/bookmarks':
+            ids = self._load_bookmarks()
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps(ids).encode('utf-8'))
+            return
+        super().do_GET()
+
+    def do_POST(self):
+        if self.path == '/api/bookmarks':
+            length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(length)
+            try:
+                data = json.loads(body)
+                ids = data.get('ids', [])
+                ok = self._save_bookmarks(ids)
+                self.send_response(200 if ok else 500)
+                self.send_header('Content-Type', 'application/json; charset=utf-8')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({'ok': ok}).encode('utf-8'))
+            except Exception as e:
+                self.send_response(400)
+                self.send_header('Content-Type', 'application/json; charset=utf-8')
+                self.end_headers()
+                self.wfile.write(json.dumps({'error': str(e)}).encode('utf-8'))
+            return
+        self.send_response(404)
+        self.end_headers()
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="即插即用的静态文件服务器"
@@ -104,13 +170,16 @@ def main():
 
     os.chdir(serve_dir)
 
-    Handler = QuietHandler if args.quiet else http.server.SimpleHTTPRequestHandler
+    # 根据是否静默模式选择 handler 基类
+    base = QuietHandler if args.quiet else http.server.SimpleHTTPRequestHandler
+
+    # 动态创建 Handler，继承 ApiHandler 的 API 方法和 base 的静态文件服务
+    class Handler(ApiHandler, base):
+        pass
 
     # 如果有 index 文件，访问根路径时自动跳转
     if index:
-        original = Handler
-
-        class RedirectHandler(original):  # type: ignore
+        class RedirectHandler(Handler):  # type: ignore
             def do_GET(self):
                 if self.path == "/":
                     self.send_response(302)
@@ -127,7 +196,7 @@ def main():
                     return
                 super().do_HEAD()
 
-        Handler = RedirectHandler
+        Handler = RedirectHandler  # type: ignore
 
     server = http.server.HTTPServer(("0.0.0.0", args.port), Handler)
 
