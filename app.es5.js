@@ -6,10 +6,12 @@ var state = {
   datasets: [],
   currentDataset: null,
   title: '知识点问答',
-  subtitle: ''
+  subtitle: '',
+  bookmarkedIds: []
 };
 
 function init() {
+  loadBookmarks();
   loadDatasets().then(function() {
     var params = new URLSearchParams(window.location.search);
     var file = params.get('file');
@@ -66,7 +68,57 @@ function getById(id) {
   return document.getElementById(id);
 }
 
+/* ====== 收藏功能 ====== */
+
+function loadBookmarks() {
+  try {
+    var saved = localStorage.getItem('quizBookmarks');
+    if (saved) state.bookmarkedIds = JSON.parse(saved);
+    if (!Array.isArray(state.bookmarkedIds)) state.bookmarkedIds = [];
+  } catch(e) { state.bookmarkedIds = []; }
+}
+
+function saveBookmarks() {
+  try { localStorage.setItem('quizBookmarks', JSON.stringify(state.bookmarkedIds)); } catch(e) {}
+}
+
+function isBookmarked(id) {
+  return state.bookmarkedIds.indexOf(id) !== -1;
+}
+
+function toggleBookmark() {
+  var q = state.questions[state.currentIndex];
+  if (!q || q.id == null) return;
+  var id = q.id;
+  var idx = state.bookmarkedIds.indexOf(id);
+  if (idx === -1) {
+    state.bookmarkedIds.push(id);
+  } else {
+    state.bookmarkedIds.splice(idx, 1);
+  }
+  saveBookmarks();
+  updateBookmarkBtn();
+  var sidebar = getById('sidebar');
+  if (sidebar.classList.contains('open')) buildSidebar();
+}
+
+function updateBookmarkBtn() {
+  var btn = getById('bookmarkBtn');
+  if (!btn) return;
+  var q = state.questions[state.currentIndex];
+  if (!q || q.id == null) { btn.style.display = 'none'; return; }
+  btn.style.display = '';
+  if (isBookmarked(q.id)) {
+    btn.textContent = '★';
+    btn.classList.add('active');
+  } else {
+    btn.textContent = '☆';
+    btn.classList.remove('active');
+  }
+}
+
 function loadFile(path) {
+  loadBookmarks();
   return fetch(path).then(function(res) {
     return res.json();
   }).then(function(data) {
@@ -175,6 +227,7 @@ function renderQuestion() {
   updateCounter();
   updateProgress();
   updateProgressText();
+  updateBookmarkBtn();
 }
 
 function escHtml(str) {
@@ -359,13 +412,228 @@ function updateProgressText() {
   getById('progressText').textContent = '已掌握 ' + state.answeredCount + ' 题，还剩 ' + remaining + ' 题待复习';
 }
 
+/* ====== 侧边栏目录（可折叠章节） ====== */
+
+var sidebarCollapsed = {};
+
+function loadSidebarState() {
+  try {
+    var saved = localStorage.getItem('quizSidebarCollapsed');
+    if (saved) sidebarCollapsed = JSON.parse(saved);
+  } catch(e) {}
+}
+
+function saveSidebarState() {
+  try { localStorage.setItem('quizSidebarCollapsed', JSON.stringify(sidebarCollapsed)); } catch(e) {}
+}
+
+function buildSidebar() {
+  var list = getById('sidebarList');
+  if (!list || !state.questions.length) return;
+
+  var query = (getById('sidebarSearch').value || '').trim().toLowerCase();
+  var hasQuery = query.length > 0;
+  var html = '';
+  var topics = {};
+  var matched = 0;
+  var datasetKey = state.currentDataset || '__default__';
+
+  for (var i = 0; i < state.questions.length; i++) {
+    var q = state.questions[i];
+    var topic = q.topic || '通用';
+    if (!topics[topic]) topics[topic] = [];
+    topics[topic].push({ index: i, q: q });
+  }
+
+  // 收藏分组（置顶）
+  var bookmarkItems = [];
+  if (!hasQuery) {
+    for (var i = 0; i < state.questions.length; i++) {
+      var q = state.questions[i];
+      if (q.id != null && isBookmarked(q.id)) {
+        bookmarkItems.push({ index: i, q: q });
+      }
+    }
+  }
+
+  if (bookmarkItems.length > 0) {
+    html += '<div class="sidebar-group">';
+    html += '<div class="sidebar-group-header">';
+    html += '<span class="sidebar-group-arrow">&#9660;</span>';
+    html += '<span class="sidebar-group-title">⭐ 收藏</span>';
+    html += '<span class="sidebar-group-count">' + bookmarkItems.length + '</span>';
+    html += '</div>';
+    html += '<div class="sidebar-group-body">';
+
+    for (var k = 0; k < bookmarkItems.length; k++) {
+      var idx = bookmarkItems[k].index;
+      var question = bookmarkItems[k].q;
+      var doneClass = question._answered ? ' done' : '';
+      var currentClass = idx === state.currentIndex ? ' current' : '';
+
+      html += '<div class="sidebar-item' + doneClass + currentClass + '" data-index="' + idx + '">';
+      html += '<span class="sidebar-item-num">' + (idx + 1) + '.</span>';
+      html += '<span class="sidebar-item-text">' + escHtml(truncate(question.question, 50)) + '</span>';
+      html += '<span class="sidebar-item-star">★</span>';
+      if (question._answered) html += '<span class="sidebar-item-check">&#10003;</span>';
+      html += '</div>';
+    }
+
+    html += '</div></div>';
+    matched += bookmarkItems.length;
+  }
+
+  var topicKeys = Object.keys(topics);
+  for (var t = 0; t < topicKeys.length; t++) {
+    var topic = topicKeys[t];
+    var items = topics[topic];
+    var filtered = [];
+
+    for (var j = 0; j < items.length; j++) {
+      var item = items[j];
+      var text = (item.q.question + ' ' + (item.q.topic || '')).toLowerCase();
+      if (!hasQuery || text.indexOf(query) !== -1) {
+        filtered.push(item);
+      }
+    }
+
+    if (filtered.length === 0) continue;
+    matched += filtered.length;
+
+    var groupKey = datasetKey + '_' + topic;
+    var isCollapsed = hasQuery ? false : sidebarCollapsed[groupKey] !== false;
+    var collapsedClass = isCollapsed ? ' collapsed' : '';
+
+    html += '<div class="sidebar-group' + collapsedClass + '" data-group="' + escHtml(groupKey) + '">';
+    html += '<div class="sidebar-group-header">';
+    html += '<span class="sidebar-group-arrow">&#9660;</span>';
+    html += '<span class="sidebar-group-title">' + escHtml(topic) + '</span>';
+    html += '<span class="sidebar-group-count">' + filtered.length + '</span>';
+    html += '</div>';
+    html += '<div class="sidebar-group-body">';
+
+    for (var k = 0; k < filtered.length; k++) {
+      var idx = filtered[k].index;
+      var question = filtered[k].q;
+      var isCurrent = idx === state.currentIndex;
+      var doneClass = question._answered ? ' done' : '';
+      var currentClass = isCurrent ? ' current' : '';
+      var bm = question.id != null && isBookmarked(question.id);
+
+      html += '<div class="sidebar-item' + doneClass + currentClass + '" data-index="' + idx + '">';
+      html += '<span class="sidebar-item-num">' + (idx + 1) + '.</span>';
+      html += '<span class="sidebar-item-text">' + escHtml(truncate(question.question, 50)) + '</span>';
+      if (bm) html += '<span class="sidebar-item-star">★</span>';
+      if (question._answered) html += '<span class="sidebar-item-check">&#10003;</span>';
+      html += '</div>';
+    }
+
+    html += '</div></div>';
+  }
+
+  list.innerHTML = html;
+  getById('sidebarCount').textContent = matched + ' / ' + state.questions.length;
+
+  // Bind group header click
+  var headers = list.querySelectorAll('.sidebar-group-header');
+  for (var i = 0; i < headers.length; i++) {
+    headers[i].addEventListener('click', onGroupHeaderClick);
+  }
+
+  // Bind item click
+  var items = list.querySelectorAll('.sidebar-item');
+  for (var i = 0; i < items.length; i++) {
+    items[i].addEventListener('click', onSidebarItemClick);
+  }
+
+  if (hasQuery) {
+    list.classList.add('sidebar-search-active');
+  } else {
+    list.classList.remove('sidebar-search-active');
+  }
+}
+
+function truncate(str, max) {
+  return str.length > max ? str.substring(0, max) + '...' : str;
+}
+
+function onGroupHeaderClick(e) {
+  var header = e.currentTarget;
+  var group = header.parentNode;
+  var groupKey = group.getAttribute('data-group');
+  group.classList.toggle('collapsed');
+  if (groupKey) {
+    sidebarCollapsed[groupKey] = group.classList.contains('collapsed');
+    saveSidebarState();
+  }
+}
+
+function onSidebarItemClick(e) {
+  var el = e.currentTarget;
+  var idx = parseInt(el.getAttribute('data-index'), 10);
+  if (!isNaN(idx) && idx >= 0 && idx < state.questions.length) {
+    state.currentIndex = idx;
+    renderQuestion();
+    closeSidebar();
+  }
+}
+
+function openSidebar() {
+  var sidebar = getById('sidebar');
+  getById('sidebarBackdrop').classList.add('visible');
+  sidebar.classList.add('open');
+  getById('sidebarToggle').classList.add('open');
+  document.body.classList.add('sidebar-open');
+  buildSidebar();
+  getById('sidebarSearch').value = '';
+}
+
+function closeSidebar() {
+  var sidebar = getById('sidebar');
+  getById('sidebarBackdrop').classList.remove('visible');
+  sidebar.classList.remove('open');
+  getById('sidebarToggle').classList.remove('open');
+  document.body.classList.remove('sidebar-open');
+}
+
+function toggleSidebar() {
+  var sidebar = getById('sidebar');
+  if (sidebar.classList.contains('open')) {
+    closeSidebar();
+  } else {
+    openSidebar();
+  }
+}
+
+function updateSidebarCurrent() {
+  var items = getById('sidebarList').querySelectorAll('.sidebar-item');
+  for (var i = 0; i < items.length; i++) {
+    var idx = parseInt(items[i].getAttribute('data-index'), 10);
+    items[i].classList.toggle('current', idx === state.currentIndex);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   init();
+  loadSidebarState();
 
   getById('revealBtn').addEventListener('click', revealAnswer);
   getById('nextBtn').addEventListener('click', nextQuestion);
   getById('prevBtn').addEventListener('click', prevQuestion);
   getById('randomBtn').addEventListener('click', randomQuestion);
+  getById('sidebarToggle').addEventListener('click', toggleSidebar);
+  getById('sidebarClose').addEventListener('click', closeSidebar);
+  getById('bookmarkBtn').addEventListener('click', toggleBookmark);
+  getById('sidebarBackdrop').addEventListener('click', closeSidebar);
+  getById('sidebarSearch').addEventListener('input', buildSidebar);
+  getById('sidebarSearch').addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeSidebar();
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      var first = getById('sidebarList').querySelector('.sidebar-item');
+      if (first) first.click();
+    }
+  });
 
   document.addEventListener('keydown', function(e) {
     if (e.key === ' ' || e.key === 'Enter') {
@@ -379,5 +647,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     if (e.key === 'ArrowRight') nextQuestion();
     if (e.key === 'ArrowLeft') prevQuestion();
+    if (e.key === 'Escape') closeSidebar();
   });
 });

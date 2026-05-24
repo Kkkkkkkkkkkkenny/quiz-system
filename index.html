@@ -4,12 +4,29 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>知识点问答</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-header-left">
+        <span class="sidebar-title">目录</span>
+        <span class="sidebar-count" id="sidebarCount"></span>
+      </div>
+      <button class="sidebar-close" id="sidebarClose">&times;</button>
+    </div>
+    <div class="sidebar-search">
+      <input type="text" id="sidebarSearch" placeholder="搜索题目..." autocomplete="off">
+    </div>
+    <div class="sidebar-list" id="sidebarList"></div>
+  </div>
+
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
   <div class="container">
     <header>
       <div class="header-top">
+        <button class="sidebar-btn" id="sidebarToggle" aria-label="切换目录">☰</button>
         <select id="datasetSelect" class="dataset-select">
           <option>加载中...</option>
         </select>
@@ -25,7 +42,10 @@
     <div class="card" id="card">
       <div class="card-header">
         <span class="topic-badge" id="topicBadge">通用</span>
-        <span class="card-counter" id="counter">- / -</span>
+        <span class="card-header-right">
+          <span class="card-counter" id="counter">- / -</span>
+          <button class="bookmark-btn" id="bookmarkBtn" title="收藏">☆</button>
+        </span>
       </div>
       <div class="card-body">
         <div class="question-area">
