@@ -1,27 +1,4 @@
-/* 诊断 */
-function diag() {
-  var d = document.getElementById('diag');
-  if (!d) return;
-  d.style.display = 'block';
-  var msgs = [];
-  msgs.push('app.js loaded: OK');
-  msgs.push('User-Agent: ' + navigator.userAgent);
-  msgs.push('startsWith: ' + (typeof 'x'.startsWith) + (typeof 'x'.startsWith === 'function' ? ' OK' : ' FAIL'));
-  msgs.push('endsWith: ' + (typeof 'x'.endsWith) + (typeof 'x'.endsWith === 'function' ? ' OK' : ' FAIL'));
-  msgs.push('trim: ' + (typeof 'x'.trim) + (typeof 'x'.trim === 'function' ? ' OK' : ' FAIL'));
-  msgs.push('replace(regex): ' + (typeof 'x'.replace) + ' OK');
-  try {
-    var t = formatAnswer('**粗体**，`代码`');
-    msgs.push('formatAnswer: OK');
-    msgs.push('有<strong>: ' + (t.indexOf('<strong>') > -1));
-    msgs.push('有<code>: ' + (t.indexOf('<code>') > -1));
-  } catch(e) {
-    msgs.push('formatAnswer FAIL: ' + e.message);
-  }
-  d.innerHTML = msgs.join('<br>');
-}
-
-const state = {
+var state = {
   questions: [],
   currentIndex: 0,
   isAnswered: false,
@@ -32,58 +9,67 @@ const state = {
   subtitle: ''
 };
 
-async function init() {
-  await loadDatasets();
+function init() {
+  loadDatasets().then(function() {
+    var params = new URLSearchParams(window.location.search);
+    var file = params.get('file');
+    var setId = params.get('set');
 
-  const params = new URLSearchParams(window.location.search);
-
-  let file = params.get('file');
-  const setId = params.get('set');
-
-  if (file) {
-    await loadFile(file);
-  } else if (setId) {
-    const ds = state.datasets.find(d => d.id === setId);
-    if (ds) await loadFile(ds.file);
-    else await loadDefault();
-  } else {
-    await loadDefault();
-  }
-
-  populateSelector();
+    if (file) {
+      loadFile(file);
+    } else if (setId) {
+      var ds = findDataset(setId);
+      if (ds) loadFile(ds.file);
+      else loadDefault();
+    } else {
+      loadDefault();
+    }
+  }).then(function() {
+    populateSelector();
+  });
 }
 
-async function loadDatasets() {
-  try {
-    const res = await fetch('datasets.json');
-    state.datasets = await res.json();
-  } catch {
+function findDataset(id) {
+  for (var i = 0; i < state.datasets.length; i++) {
+    if (state.datasets[i].id === id) return state.datasets[i];
+  }
+  return null;
+}
+
+function loadDatasets() {
+  return fetch('datasets.json').then(function(res) {
+    return res.json();
+  }).then(function(data) {
+    state.datasets = data;
+  }).catch(function() {
     state.datasets = [];
-  }
+  });
 }
 
-async function loadDefault() {
-  const saved = localStorage.getItem('quizDataset');
+function loadDefault() {
+  var saved = null;
+  try { saved = localStorage.getItem('quizDataset'); } catch(e) {}
   if (saved) {
-    const ds = state.datasets.find(d => d.id === saved);
+    var ds = findDataset(saved);
     if (ds) {
-      await loadFile(ds.file);
-      return;
+      return loadFile(ds.file);
     }
   }
-
   if (state.datasets.length > 0) {
-    await loadFile(state.datasets[0].file);
+    return loadFile(state.datasets[0].file);
   } else {
-    await loadFile('data.json');
+    return loadFile('data.json');
   }
 }
 
-async function loadFile(path) {
-  try {
-    const res = await fetch(path);
-    const data = await res.json();
+function getById(id) {
+  return document.getElementById(id);
+}
 
+function loadFile(path) {
+  return fetch(path).then(function(res) {
+    return res.json();
+  }).then(function(data) {
     if (Array.isArray(data)) {
       state.questions = data;
       state.title = '知识点问答';
@@ -101,47 +87,49 @@ async function loadFile(path) {
     state.currentIndex = 0;
     state.isAnswered = false;
     state.answeredCount = 0;
-    state.questions.forEach(q => delete q._answered);
+    for (var i = 0; i < state.questions.length; i++) {
+      delete state.questions[i]._answered;
+    }
 
     updateHeader();
     renderQuestion();
-  } catch (err) {
-    document.getElementById('questionText').textContent =
-      `加载失败：${err.message}，请检查文件路径是否正确。`;
-    document.getElementById('topicBadge').textContent = '错误';
-    document.getElementById('counter').textContent = '- / -';
-  }
+  }).catch(function(err) {
+    getById('questionText').textContent = '加载失败：' + err.message + '，请检查文件路径是否正确。';
+    getById('topicBadge').textContent = '错误';
+    getById('counter').textContent = '- / -';
+  });
 }
 
 function populateSelector() {
-  const sel = document.getElementById('datasetSelect');
+  var sel = getById('datasetSelect');
   if (!sel) return;
-
   sel.innerHTML = '';
 
-  // group by subject
-  const groups = {};
-  for (const ds of state.datasets) {
-    const key = ds.subject || '其他';
+  var groups = {};
+  for (var i = 0; i < state.datasets.length; i++) {
+    var ds = state.datasets[i];
+    var key = ds.subject || '其他';
     if (!groups[key]) groups[key] = [];
     groups[key].push(ds);
   }
 
-  for (const [subject, items] of Object.entries(groups)) {
-    const optgroup = document.createElement('optgroup');
+  var keys = Object.keys(groups);
+  for (var k = 0; k < keys.length; k++) {
+    var subject = keys[k];
+    var items = groups[subject];
+    var optgroup = document.createElement('optgroup');
     optgroup.label = subject;
-    for (const ds of items) {
-      const opt = document.createElement('option');
-      opt.value = ds.id;
-      opt.textContent = ds.title;
+    for (var j = 0; j < items.length; j++) {
+      var opt = document.createElement('option');
+      opt.value = items[j].id;
+      opt.textContent = items[j].title;
       optgroup.appendChild(opt);
     }
     sel.appendChild(optgroup);
   }
 
-  // select current
-  const id = state.currentDataset;
-  if (id && state.datasets.some(d => d.id === id)) {
+  var id = state.currentDataset;
+  if (id && findDataset(id)) {
     sel.value = id;
   }
 
@@ -149,16 +137,16 @@ function populateSelector() {
 }
 
 function onDatasetChange() {
-  const id = document.getElementById('datasetSelect').value;
-  const ds = state.datasets.find(d => d.id === id);
+  var id = getById('datasetSelect').value;
+  var ds = findDataset(id);
   if (!ds) return;
-  localStorage.setItem('quizDataset', id);
+  try { localStorage.setItem('quizDataset', id); } catch(e) {}
   loadFile(ds.file);
 }
 
 function updateHeader() {
-  const titleEl = document.getElementById('mainTitle');
-  const subtitleEl = document.getElementById('mainSubtitle');
+  var titleEl = getById('mainTitle');
+  var subtitleEl = getById('mainSubtitle');
 
   if (titleEl) titleEl.textContent = state.title;
   if (subtitleEl) {
@@ -172,16 +160,16 @@ function updateHeader() {
 function renderQuestion() {
   if (!state.questions.length) return;
 
-  const q = state.questions[state.currentIndex];
-  document.getElementById('topicBadge').textContent = q.topic || '通用';
-  document.getElementById('questionText').textContent = q.question;
+  var q = state.questions[state.currentIndex];
+  getById('topicBadge').textContent = q.topic || '通用';
+  getById('questionText').textContent = q.question;
 
-  const answerDiv = document.getElementById('answerText');
+  var answerDiv = getById('answerText');
   answerDiv.innerHTML = formatAnswer(q.answer);
 
-  document.getElementById('answerArea').classList.remove('visible');
-  document.getElementById('revealBtn').style.display = 'block';
-  document.getElementById('revealBtn').textContent = '显示答案';
+  getById('answerArea').classList.remove('visible');
+  getById('revealBtn').style.display = 'block';
+  getById('revealBtn').textContent = '显示答案';
   state.isAnswered = false;
 
   updateCounter();
@@ -199,7 +187,8 @@ function formatAnswer(text) {
     var lines = text.split('\n');
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i];
-      if (line.trim().startsWith('```')) {
+      var t = line.trim();
+      if (t.indexOf('```') === 0) {
         if (inCode) {
           parts.push({ t: 'code', c: buf });
           buf = '';
@@ -241,10 +230,8 @@ function renderBlocks(text) {
     out.push('<table>');
     for (var r = 0; r < tableRows.length; r++) {
       var cells = tableRows[r].split('|');
-      // 去掉首尾空单元格
       if (cells.length > 0 && cells[0].trim() === '') cells.shift();
       if (cells.length > 0 && cells[cells.length - 1].trim() === '') cells.pop();
-      // 跳过分隔行 (|---|)
       if (r === 1 && /^[-:\s]+$/.test(cells[0].trim())) continue;
       var tag = r === 0 ? 'th' : 'td';
       out.push('<tr>');
@@ -276,16 +263,11 @@ function renderBlocks(text) {
     }
 
     // Table
-    if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+    if (trimmed.indexOf('|') === 0 && trimmed.charAt(trimmed.length - 1) === '|') {
       flushList();
-      // 如果是分隔行，标记但保留
       tableRows.push(trimmed);
       if (!inTable) {
         inTable = true;
-        // 检查下一行是否是分隔行
-        if (i + 1 < lines.length && /^\|[-:\s|]+\|$/.test(lines[i + 1].trim())) {
-          // 表头行，不用特殊处理
-        }
       }
       continue;
     }
@@ -320,21 +302,17 @@ function renderBlocks(text) {
 }
 
 function renderInline(text) {
-  // 必须优先转义 HTML
   var s = escHtml(text);
-  // 行内代码
   s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
-  // 粗体 **text**
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  // 换行
   s = s.replace(/\n/g, '<br>');
   return s;
 }
 
 function revealAnswer() {
   if (state.isAnswered) return;
-  document.getElementById('answerArea').classList.add('visible');
-  document.getElementById('revealBtn').style.display = 'none';
+  getById('answerArea').classList.add('visible');
+  getById('revealBtn').style.display = 'none';
   state.isAnswered = true;
   if (!state.questions[state.currentIndex]._answered) {
     state.questions[state.currentIndex]._answered = true;
@@ -359,7 +337,7 @@ function prevQuestion() {
 }
 
 function randomQuestion() {
-  let newIndex;
+  var newIndex;
   do {
     newIndex = Math.floor(Math.random() * state.questions.length);
   } while (newIndex === state.currentIndex && state.questions.length > 1);
@@ -368,33 +346,28 @@ function randomQuestion() {
 }
 
 function updateCounter() {
-  document.getElementById('counter').textContent =
-    `${state.currentIndex + 1} / ${state.questions.length}`;
+  getById('counter').textContent = (state.currentIndex + 1) + ' / ' + state.questions.length;
 }
 
 function updateProgress() {
-  const pct = state.questions.length
-    ? (state.answeredCount / state.questions.length) * 100
-    : 0;
-  document.getElementById('progressFill').style.width = `${pct}%`;
+  var pct = state.questions.length ? (state.answeredCount / state.questions.length) * 100 : 0;
+  getById('progressFill').style.width = pct + '%';
 }
 
 function updateProgressText() {
-  const remaining = state.questions.length - state.answeredCount;
-  document.getElementById('progressText').textContent =
-    `已掌握 ${state.answeredCount} 题，还剩 ${remaining} 题待复习`;
+  var remaining = state.questions.length - state.answeredCount;
+  getById('progressText').textContent = '已掌握 ' + state.answeredCount + ' 题，还剩 ' + remaining + ' 题待复习';
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  diag();
+document.addEventListener('DOMContentLoaded', function() {
   init();
 
-  document.getElementById('revealBtn').addEventListener('click', revealAnswer);
-  document.getElementById('nextBtn').addEventListener('click', nextQuestion);
-  document.getElementById('prevBtn').addEventListener('click', prevQuestion);
-  document.getElementById('randomBtn').addEventListener('click', randomQuestion);
+  getById('revealBtn').addEventListener('click', revealAnswer);
+  getById('nextBtn').addEventListener('click', nextQuestion);
+  getById('prevBtn').addEventListener('click', prevQuestion);
+  getById('randomBtn').addEventListener('click', randomQuestion);
 
-  document.addEventListener('keydown', (e) => {
+  document.addEventListener('keydown', function(e) {
     if (e.key === ' ' || e.key === 'Enter') {
       if (!state.isAnswered) {
         e.preventDefault();
