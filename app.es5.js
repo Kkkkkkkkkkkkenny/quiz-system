@@ -79,10 +79,11 @@ function loadBookmarks() {
   } catch(e) { state.bookmarkedIds = []; }
 
   // 再尝试从服务端拉取（覆盖本地）
-  fetch('/api/bookmarks').then(function(res) {
+  fetch('/api/data/bookmarks').then(function(res) {
     if (!res.ok) throw new Error('API unavailable');
     return res.json();
-  }).then(function(ids) {
+  }).then(function(result) {
+    var ids = result && result.data;
     if (Array.isArray(ids)) {
       state.bookmarkedIds = ids;
       try { localStorage.setItem('quizBookmarks', JSON.stringify(ids)); } catch(e) {}
@@ -96,10 +97,10 @@ function saveBookmarks() {
   try { localStorage.setItem('quizBookmarks', JSON.stringify(state.bookmarkedIds)); } catch(e) {}
 
   // 同步到服务端（静默失败）
-  fetch('/api/bookmarks', {
+  fetch('/api/data/bookmarks', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ids: state.bookmarkedIds })
+    body: JSON.stringify({ data: state.bookmarkedIds })
   }).catch(function() {});
 }
 
