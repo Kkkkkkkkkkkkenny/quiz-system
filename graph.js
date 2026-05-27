@@ -102,8 +102,17 @@
   };
 
   KnowledgeGraph.prototype.resize = function() {
+    var oldW = this._w, oldH = this._h;
     this._resize();
-    if (this.nodes.length) this.render();
+    if (!this.nodes.length) return;
+    /* 方向变化时重新布局 */
+    var wasPortrait = oldH > oldW;
+    var isPortrait = this._h > this._w;
+    if (wasPortrait !== isPortrait) {
+      this._layout();
+      this._fitView();
+    }
+    this.render();
   };
 
   KnowledgeGraph.prototype.render = function() {
@@ -209,6 +218,9 @@
   KnowledgeGraph.prototype._layout = function() {
     if (!this.nodes.length) return;
 
+    /* detect orientation: portrait = vertical tree, landscape = horizontal spread */
+    var isPortrait = this._h > this._w;
+
     /* 1. assign depths via BFS */
     var queue = [this.rootId];
     this.nMap[this.rootId].depth = 0;
@@ -231,27 +243,46 @@
     var keys = Object.keys(layerNodes).sort(function(a,b){return a-b;});
     var maxDepth = parseInt(keys[keys.length-1]) || 0;
 
-    /* 3. initial positions with slight randomness */
-    var layerSpread = 300;
-    for (var d = 0; d < keys.length; d++) {
-      var nodes = layerNodes[keys[d]];
-      var count = nodes.length;
-      var startX = -(count - 1) * layerSpread / 2;
-      for (var i = 0; i < nodes.length; i++) {
-        var n = nodes[i];
-        n.x = startX + i * layerSpread + (Math.random() - 0.5) * 30;
-        n.y = n.depth * (SIZES.chH + SIZES.layerGap) + (Math.random() - 0.5) * 15;
-        n.vx = 0;
-        n.vy = 0;
+    /* 3. initial positions */
+    if (isPortrait) {
+      /* ---- 竖屏：纵向树形布局 ---- */
+      var vGap = 70;
+      for (var d = 0; d < keys.length; d++) {
+        var nodes = layerNodes[keys[d]];
+        var count = nodes.length;
+        /* 每层在竖向排列，节点之间留够间距 */
+        var startY = -(count - 1) * vGap / 2;
+        for (var i = 0; i < nodes.length; i++) {
+          var n = nodes[i];
+          n.x = d * (SIZES.chW + 60) + (Math.random() - 0.5) * 10;
+          n.y = startY + i * vGap + (Math.random() - 0.5) * 8;
+          n.vx = 0;
+          n.vy = 0;
+        }
+      }
+    } else {
+      /* ---- 横屏/桌面：横向铺开（原逻辑） ---- */
+      var layerSpread = 300;
+      for (var d = 0; d < keys.length; d++) {
+        var nodes = layerNodes[keys[d]];
+        var count = nodes.length;
+        var startX = -(count - 1) * layerSpread / 2;
+        for (var i = 0; i < nodes.length; i++) {
+          var n = nodes[i];
+          n.x = startX + i * layerSpread + (Math.random() - 0.5) * 30;
+          n.y = n.depth * (SIZES.chH + SIZES.layerGap) + (Math.random() - 0.5) * 15;
+          n.vx = 0;
+          n.vy = 0;
+        }
       }
     }
 
     /* 4. force simulation */
-    var repel = 60000;
-    var attract = 0.008;
-    var idealLen = 130;
-    var layerPull = 0.03;
-    var centerPull = 0.002;
+    var repel = isPortrait ? 35000 : 60000;
+    var attract = isPortrait ? 0.012 : 0.008;
+    var idealLen = isPortrait ? 90 : 130;
+    var layerPull = isPortrait ? 0.05 : 0.03;
+    var centerPull = isPortrait ? 0.003 : 0.002;
     var damp = 0.8;
     var iters = 200;
 
@@ -289,15 +320,19 @@
       /* layer gravity + apply */
       for (var i = 0; i < this.nodes.length; i++) {
         var n = this.nodes[i];
-        /* pull toward layer y */
-        var targetY = n.depth * (SIZES.chH + SIZES.layerGap);
-        n.vy += (targetY - n.y) * layerPull;
-        /* gentle pull toward x=0 */
-        n.vx += (0 - n.x) * centerPull;
-        /* damp */
+        if (isPortrait) {
+          /* 竖屏：拉向右侧层级位置 */
+          var targetX = n.depth * (SIZES.chW + 60);
+          n.vx += (targetX - n.x) * layerPull;
+          n.vy += (0 - n.y) * centerPull;
+        } else {
+          /* 横屏：拉向下方层级位置 */
+          var targetY = n.depth * (SIZES.chH + SIZES.layerGap);
+          n.vy += (targetY - n.y) * layerPull;
+          n.vx += (0 - n.x) * centerPull;
+        }
         n.vx *= damp;
         n.vy *= damp;
-        /* apply */
         n.x += n.vx;
         n.y += n.vy;
       }
@@ -415,24 +450,47 @@
     var tgt = this.nMap[edge.target];
     if (!src || !tgt) return;
 
+    var isPortrait = this._h > this._w;
+
     ctx.save();
     ctx.strokeStyle = EDGE_COLOR;
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(src.x, src.y + src.h / 2);
-    var cy1 = src.y + src.h / 2 + (tgt.y - tgt.h / 2 - src.y - src.h / 2) * 0.5;
-    var cy2 = tgt.y - tgt.h / 2 - (tgt.y - tgt.h / 2 - src.y - src.h / 2) * 0.5;
-    ctx.bezierCurveTo(src.x, cy1, tgt.x, cy2, tgt.x, tgt.y - tgt.h / 2);
-    ctx.stroke();
 
-    /* subtle glow on hover */
-    if (this._hover && (this._hover.id === edge.source || this._hover.id === edge.target)) {
-      ctx.strokeStyle = 'rgba(59,130,246,0.25)';
-      ctx.lineWidth = 6;
-      ctx.beginPath();
+    if (isPortrait) {
+      /* 竖屏：从父节点右侧 → 子节点左侧 */
+      var sx = src.x + src.w / 2, sy = src.y;
+      var tx = tgt.x - tgt.w / 2, ty = tgt.y;
+      ctx.moveTo(sx, sy);
+      var cx1 = sx + (tx - sx) * 0.5;
+      var cx2 = tx - (tx - sx) * 0.5;
+      ctx.bezierCurveTo(cx1, sy, cx2, ty, tx, ty);
+      ctx.stroke();
+
+      if (this._hover && (this._hover.id === edge.source || this._hover.id === edge.target)) {
+        ctx.strokeStyle = 'rgba(59,130,246,0.25)';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.bezierCurveTo(cx1, sy, cx2, ty, tx, ty);
+        ctx.stroke();
+      }
+    } else {
+      /* 横屏：从父节点底部 → 子节点顶部 */
       ctx.moveTo(src.x, src.y + src.h / 2);
+      var cy1 = src.y + src.h / 2 + (tgt.y - tgt.h / 2 - src.y - src.h / 2) * 0.5;
+      var cy2 = tgt.y - tgt.h / 2 - (tgt.y - tgt.h / 2 - src.y - src.h / 2) * 0.5;
       ctx.bezierCurveTo(src.x, cy1, tgt.x, cy2, tgt.x, tgt.y - tgt.h / 2);
       ctx.stroke();
+
+      if (this._hover && (this._hover.id === edge.source || this._hover.id === edge.target)) {
+        ctx.strokeStyle = 'rgba(59,130,246,0.25)';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(src.x, src.y + src.h / 2);
+        ctx.bezierCurveTo(src.x, cy1, tgt.x, cy2, tgt.x, tgt.y - tgt.h / 2);
+        ctx.stroke();
+      }
     }
 
     ctx.restore();
@@ -564,6 +622,12 @@
     c.addEventListener('wheel', this._onWheel.bind(this), { passive: false });
     c.addEventListener('click', this._onClick.bind(this));
     /* touch */
+    this._lastTap = 0;
+    this._lastTapX = 0;
+    this._lastTapY = 0;
+    this._pinchDist = 0;
+    this._pinchCX = 0;
+    this._pinchCY = 0;
     c.addEventListener('touchstart', this._onTouchStart.bind(this), { passive: false });
     c.addEventListener('touchmove', this._onTouchMove.bind(this), { passive: false });
     c.addEventListener('touchend', this._onTouchEnd.bind(this));
@@ -691,11 +755,56 @@
   };
 
   /* ---- touch ---- */
+  KnowledgeGraph.prototype._getTouchDist = function(t1, t2) {
+    var dx = t1.clientX - t2.clientX;
+    var dy = t1.clientY - t2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
   KnowledgeGraph.prototype._onTouchStart = function(e) {
+    var now = Date.now();
+
+    if (e.touches.length === 2) {
+      /* pinch start — cancel any drag/pan */
+      this._dragNode = null;
+      this._panning = false;
+      var rect = this.canvas.getBoundingClientRect();
+      var t0 = e.touches[0], t1 = e.touches[1];
+      this._pinchDist = this._getTouchDist(t0, t1);
+      this._pinchCX = (t0.clientX + t1.clientX) / 2 - rect.left;
+      this._pinchCY = (t0.clientY + t1.clientY) / 2 - rect.top;
+      this._pinchScale0 = this.scale;
+      this._pinchTX0 = this.tx;
+      this._pinchTY0 = this.ty;
+      e.preventDefault();
+      return;
+    }
+
     if (e.touches.length === 1) {
       var t = e.touches[0];
       var rect = this.canvas.getBoundingClientRect();
       var sx = t.clientX - rect.left, sy = t.clientY - rect.top;
+
+      /* double-tap detection */
+      var tapGap = now - this._lastTap;
+      var tapDist = Math.abs(sx - this._lastTapX) + Math.abs(sy - this._lastTapY);
+      if (tapGap < 300 && tapDist < 30) {
+        /* double-tap → toggle zoom */
+        var w = this._screenToWorld(sx, sy);
+        var targetScale = this.scale < 1.2 ? Math.min(this.scale * 2, this._maxScale) : this._minScale;
+        var ratio = targetScale / this.scale;
+        this.tx = sx - (sx - this.tx) * ratio;
+        this.ty = sy - (sy - this.ty) * ratio;
+        this.scale = targetScale;
+        this.render();
+        this._lastTap = 0;
+        e.preventDefault();
+        return;
+      }
+      this._lastTap = now;
+      this._lastTapX = sx;
+      this._lastTapY = sy;
+
       var w = this._screenToWorld(sx, sy);
       var hit = this._hitTest(w.x, w.y);
       if (hit) {
@@ -714,9 +823,30 @@
 
   KnowledgeGraph.prototype._onTouchMove = function(e) {
     e.preventDefault();
+    var rect = this.canvas.getBoundingClientRect();
+
+    if (e.touches.length === 2) {
+      /* pinch zoom */
+      var t0 = e.touches[0], t1 = e.touches[1];
+      var dist = this._getTouchDist(t0, t1);
+      var cx = (t0.clientX + t1.clientX) / 2 - rect.left;
+      var cy = (t0.clientY + t1.clientY) / 2 - rect.top;
+
+      if (this._pinchDist > 0) {
+        var ratio = dist / this._pinchDist;
+        var newScale = Math.max(this._minScale, Math.min(this._maxScale, this._pinchScale0 * ratio));
+
+        /* zoom toward pinch center */
+        this.tx = cx - (cx - this._pinchTX0) * (newScale / this._pinchScale0);
+        this.ty = cy - (cy - this._pinchTY0) * (newScale / this._pinchScale0);
+        this.scale = newScale;
+        this.render();
+      }
+      return;
+    }
+
     if (e.touches.length === 1) {
       var t = e.touches[0];
-      var rect = this.canvas.getBoundingClientRect();
       var sx = t.clientX - rect.left, sy = t.clientY - rect.top;
 
       if (this._dragNode) {
@@ -733,9 +863,9 @@
   };
 
   KnowledgeGraph.prototype._onTouchEnd = function(e) {
-    if (!this._dragNode) {
-      /* treat as click */
-      if (e.changedTouches.length === 1) {
+    if (e.touches.length === 0) {
+      /* no remaining fingers — end all gestures */
+      if (!this._dragNode && e.changedTouches.length === 1) {
         var t = e.changedTouches[0];
         var rect = this.canvas.getBoundingClientRect();
         var sx = t.clientX - rect.left, sy = t.clientY - rect.top;
@@ -747,9 +877,20 @@
           this.cb.onChapterClick(hit.fullLabel);
         }
       }
+      this._dragNode = null;
+      this._panning = false;
+      this._pinchDist = 0;
+    } else if (e.touches.length === 1) {
+      /* one finger lifted during pinch → start pan with remaining finger */
+      this._pinchDist = 0;
+      var t = e.touches[0];
+      var rect = this.canvas.getBoundingClientRect();
+      this._panning = true;
+      this._panSX = t.clientX - rect.left;
+      this._panSY = t.clientY - rect.top;
+      this._panTX = this.tx;
+      this._panTY = this.ty;
     }
-    this._dragNode = null;
-    this._panning = false;
   };
 
   /* ---- export ---- */
