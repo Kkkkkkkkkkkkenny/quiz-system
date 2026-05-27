@@ -703,6 +703,78 @@ body.sidebar-open {
   color: #2c3e50;
 }
 
+/* ====== 平板适配（769px ~ 1024px）====== */
+@media (min-width: 769px) and (max-width: 1024px) {
+  body {
+    padding: 24px 20px;
+    align-items: center;
+  }
+
+  .container {
+    max-width: 600px;
+  }
+
+  header h1 {
+    font-size: 24px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+  }
+
+  .dataset-select {
+    max-width: 240px;
+    font-size: 13px;
+  }
+
+  .card {
+    border-radius: 14px;
+  }
+
+  .card-header {
+    padding: 14px 20px;
+  }
+
+  .card-body {
+    padding: 24px 20px;
+  }
+
+  .card-actions {
+    padding: 0 20px 18px;
+  }
+
+  .question-text {
+    font-size: 17px;
+  }
+
+  .answer-text {
+    font-size: 15px;
+  }
+
+  .btn-primary {
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  .btn-secondary {
+    padding: 11px 14px;
+    font-size: 14px;
+  }
+
+  .sidebar {
+    width: 360px;
+  }
+
+  .sidebar-item {
+    padding: 8px 16px 8px 28px;
+  }
+
+  .sidebar-item-text {
+    font-size: 13px;
+  }
+}
+
+/* ====== 手机 + 小平板（≤ 768px）====== */
 @media (max-width: 768px) {
   body {
     padding: 16px 12px;
