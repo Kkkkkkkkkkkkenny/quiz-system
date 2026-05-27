@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>知识点问答</title>
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
   <div class="sidebar" id="sidebar">
@@ -26,7 +26,10 @@
   <div class="container">
     <header>
       <div class="header-top">
-        <button class="sidebar-btn" id="sidebarToggle" aria-label="切换目录">☰</button>
+        <div class="header-top-left">
+          <button class="sidebar-btn" id="sidebarToggle" aria-label="切换目录">☰</button>
+          <a href="graph.html" class="mode-btn" id="modeToggle" title="知识图谱">🗺️</a>
+        </div>
         <select id="datasetSelect" class="dataset-select">
           <option>加载中...</option>
         </select>
@@ -72,6 +75,6 @@
     <div class="progress-text" id="progressText"></div>
   </div>
 
-  <script src="app.es5.js?v=4"></script>
+  <script src="app.es5.js?v=7"></script>
 </body>
 </html>

@@ -668,6 +668,41 @@ body.sidebar-open {
   overflow: hidden;
 }
 
+/* ====== 知识图谱入口按钮 ====== */
+
+.header-top-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mode-btn {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+  background: #fff;
+  color: #2c3e50;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.mode-btn:hover {
+  background: #4facfe;
+  border-color: #4facfe;
+  color: #fff;
+}
+
+.mode-btn:visited {
+  color: #2c3e50;
+}
+
 @media (max-width: 768px) {
   body {
     padding: 16px 12px;

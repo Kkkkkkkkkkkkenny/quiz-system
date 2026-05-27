@@ -561,6 +561,15 @@ function updateProgressText() {
   getById('progressText').textContent = '已掌握 ' + state.answeredCount + ' 题，还剩 ' + remaining + ' 题待复习';
 }
 
+/* ====== 知识图谱（跳转独立页面） ====== */
+
+function openGraphPage() {
+  var setId = state.currentDataset;
+  var url = 'graph.html';
+  if (setId) url += '?set=' + encodeURIComponent(setId);
+  window.location.href = url;
+}
+
 /* ====== 侧边栏目录（可折叠章节） ====== */
 
 var sidebarCollapsed = {};
@@ -796,5 +805,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (e.key === 'ArrowRight') nextQuestion();
     if (e.key === 'ArrowLeft') prevQuestion();
     if (e.key === 'Escape') closeSidebar();
+    if (e.key === 'g' || e.key === 'G') openGraphPage();
   });
 });

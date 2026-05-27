@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>知识图谱</title>
+  <link rel="stylesheet" href="style.css?v=7">
+  <style>
+    /* 图谱专用样式 — 覆盖主站样式 */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #F8FAFC;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+    }
+
+    /* 顶部栏 */
+    .graph-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: #fff;
+      border-bottom: 1px solid #E2E8F0;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .graph-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .graph-header-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1E293B;
+    }
+    .graph-header-sub {
+      font-size: 12px;
+      color: #94A3B8;
+    }
+
+    .graph-back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 14px;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      background: #fff;
+      color: #475569;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .graph-back-link:hover {
+      border-color: #94A3B8;
+      background: #F8FAFC;
+    }
+    .graph-back-link:active { transform: scale(0.97); }
+
+    /* 数据集选择器（联动主站数据集） */
+    .graph-select {
+      padding: 5px 28px 5px 10px;
+      border: 1px solid #E2E8F0;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #334155;
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 8px center;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      max-width: 200px;
+    }
+    .graph-select:focus {
+      outline: none;
+      border-color: #3B82F6;
+    }
+
+    /* 图谱主体（占满剩余空间） */
+    .graph-body {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    .graph-body canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* 底部提示 */
+    .graph-footer {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: #94A3B8;
+      background: rgba(255,255,255,0.88);
+      padding: 5px 18px;
+      border-radius: 20px;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 5;
+    }
+
+    /* 等待加载 */
+    .graph-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #94A3B8;
+      font-size: 15px;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .graph-loading.hidden { display: none; }
+
+    @media (max-width: 480px) {
+      .graph-header { padding: 8px 10px; }
+      .graph-header-title { font-size: 13px; }
+      .graph-back-link { font-size: 12px; padding: 5px 10px; }
+      .graph-select { font-size: 11px; max-width: 130px; }
+      .graph-footer { font-size: 11px; padding: 4px 14px; bottom: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="graph-header">
+    <div class="graph-header-left">
+      <a class="graph-back-link" id="backLink" href="index.html">← 返回</a>
+      <span class="graph-header-title" id="graphTitle">知识图谱</span>
+      <span class="graph-header-sub" id="graphSub"></span>
+    </div>
+    <select class="graph-select" id="graphSelect">
+      <option>加载中...</option>
+    </select>
+  </div>
+
+  <div class="graph-body">
+    <div class="graph-loading" id="graphLoading">加载中...</div>
+    <canvas id="graphCanvas"></canvas>
+    <div class="graph-footer" id="graphFooter">滚轮缩放 · 拖拽平移 · 点击知识点跳转</div>
+  </div>
+
+  <script src="graph.js?v=3"></script>
+  <script>
+  (function() {
+    'use strict';
+
+    var canvas = document.getElementById('graphCanvas');
+    var titleEl = document.getElementById('graphTitle');
+    var subEl = document.getElementById('graphSub');
+    var selectEl = document.getElementById('graphSelect');
+    var loadingEl = document.getElementById('graphLoading');
+    var footerEl = document.getElementById('graphFooter');
+
+    var DATASETS = [];
+    var graph = null;
+
+    /* ---- 操作提示 ---- */
+    function showFooter(msg) {
+      footerEl.textContent = msg;
+    }
+
+    /* ---- 从 datasets.json 加载 ---- */
+    function loadDatasets() {
+      return fetch('datasets.json').then(function(r) { return r.json(); }).then(function(data) {
+        DATASETS = data;
+        populateSelect(data);
+        return data;
+      }).catch(function() {
+        DATASETS = [];
+        selectEl.innerHTML = '<option>加载失败</option>';
+      });
+    }
+
+    function populateSelect(datasets) {
+      selectEl.innerHTML = '';
+      var groups = {};
+      for (var i = 0; i < datasets.length; i++) {
+        var ds = datasets[i];
+        var key = ds.subject || '其他';
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(ds);
+      }
+      var keys = Object.keys(groups);
+      for (var k = 0; k < keys.length; k++) {
+        var group = document.createElement('optgroup');
+        group.label = keys[k];
+        var items = groups[keys[k]];
+        for (var j = 0; j < items.length; j++) {
+          var opt = document.createElement('option');
+          opt.value = items[j].id;
+          opt.textContent = items[j].title;
+          group.appendChild(opt);
+        }
+        selectEl.appendChild(group);
+      }
+    }
+
+    /* ---- 加载具体题库 ---- */
+    function loadDataset(setId) {
+      loadingEl.classList.remove('hidden');
+      selectEl.value = setId || '';
+
+      var ds = null;
+      for (var i = 0; i < DATASETS.length; i++) {
+        if (DATASETS[i].id === setId) { ds = DATASETS[i]; break; }
+      }
+      if (!ds) {
+        loadingEl.textContent = '未找到题库，请选择';
+        return;
+      }
+
+      fetch(ds.file).then(function(r) { return r.json(); }).then(function(data) {
+        var questions = Array.isArray(data) ? data : (data.questions || []);
+        var titleText = data.title || ds.title || '知识图谱';
+        var subtitle = data.subtitle || ds.description || '';
+        var qCount = ds.count || questions.length;
+
+        titleEl.textContent = titleText;
+        subEl.textContent = qCount + ' 知识点';
+        loadingEl.classList.add('hidden');
+
+        if (graph) {
+          graph.setData(questions, titleText);
+          showFooter('滚轮缩放 · 拖拽平移 · 点击知识点跳转');
+        }
+      }).catch(function() {
+        loadingEl.textContent = '加载失败';
+      });
+    }
+
+    /* ---- 初始化 ---- */
+    function init() {
+      graph = new KnowledgeGraph(canvas, {
+        onTopicClick: function(topic) {
+          /* 点击知识点 → 跳回主页面并定位到该知识点 */
+          var currentId = selectEl.value;
+          if (currentId) {
+            window.location.href = 'index.html?set=' + encodeURIComponent(currentId) + '&topic=' + encodeURIComponent(topic);
+          } else {
+            window.location.href = 'index.html';
+          }
+        },
+        onChapterClick: function(chapter) {
+          var currentId = selectEl.value;
+          if (currentId) {
+            window.location.href = 'index.html?set=' + encodeURIComponent(currentId) + '&chapter=' + encodeURIComponent(chapter);
+          } else {
+            window.location.href = 'index.html';
+          }
+        }
+      });
+
+      loadDatasets().then(function() {
+        /* 从 URL 参数获取 set */
+        var params = new URLSearchParams(window.location.search);
+        var setId = params.get('set');
+        if (setId && findDataset(setId)) {
+          loadDataset(setId);
+        } else if (DATASETS.length > 0) {
+          /* 尝试从 localStorage 恢复上次使用的题库 */
+          var saved = null;
+          try { saved = localStorage.getItem('quizDataset'); } catch(e) {}
+          if (saved && findDataset(saved)) {
+            loadDataset(saved);
+          } else {
+            loadDataset(DATASETS[0].id);
+          }
+        }
+      });
+
+      /* 切换题库 */
+      selectEl.addEventListener('change', function() {
+        var id = selectEl.value;
+        try { localStorage.setItem('quizDataset', id); } catch(e) {}
+        loadDataset(id);
+        /* 更新 URL 方便分享 */
+        var url = new URL(window.location);
+        url.searchParams.set('set', id);
+        history.replaceState(null, '', url);
+      });
+
+      /* 窗口尺寸变化自适应 */
+      window.addEventListener('resize', function() {
+        if (graph) graph.resize();
+      });
+    }
+
+    function findDataset(id) {
+      for (var i = 0; i < DATASETS.length; i++) {
+        if (DATASETS[i].id === id) return DATASETS[i];
+      }
+      return null;
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+  </script>
+</body>
+</html>
