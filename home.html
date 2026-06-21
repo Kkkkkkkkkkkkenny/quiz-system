@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>408 考研学习系统</title>
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    .home-hero {
+      text-align: center;
+      padding: 60px 24px 40px;
+    }
+    .home-hero__icon {
+      width: 64px;
+      height: 64px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-primary);
+      color: var(--color-bg);
+      border-radius: var(--radius-xl);
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 20px;
+    }
+    .home-hero__title {
+      font-size: 2.25rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+    }
+    .home-hero__desc {
+      font-size: 1.125rem;
+      color: var(--color-text-secondary);
+      max-width: 520px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
+    }
+    .home-modes {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      max-width: 800px;
+      margin: 0 auto 48px;
+      padding: 0 24px;
+    }
+    .home-mode {
+      display: flex;
+      flex-direction: column;
+      padding: 28px 24px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      text-decoration: none;
+      transition: all var(--transition-normal);
+      background: var(--color-bg);
+    }
+    .home-mode:hover {
+      border-color: var(--color-accent);
+      box-shadow: 0 8px 24px var(--color-shadow);
+      transform: translateY(-3px);
+    }
+    .home-mode__icon {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-accent-bg);
+      color: var(--color-accent);
+      border-radius: var(--radius-lg);
+      margin-bottom: 16px;
+      font-size: 22px;
+    }
+    .home-mode__title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: 8px;
+    }
+    .home-mode__desc {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+      flex: 1;
+    }
+    .home-mode__arrow {
+      margin-top: 16px;
+      font-size: 0.875rem;
+      color: var(--color-accent);
+      font-weight: 600;
+    }
+    .home-subjects {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 24px 60px;
+    }
+    .home-subjects__title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      text-align: center;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .home-subjects__grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .home-subject {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-lg);
+      text-decoration: none;
+      transition: all var(--transition-fast);
+      background: var(--color-bg);
+    }
+    .home-subject:hover {
+      border-color: var(--color-accent);
+      background: var(--color-accent-bg);
+    }
+    .home-subject__icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .home-subject__info {
+      min-width: 0;
+    }
+    .home-subject__name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--color-primary);
+    }
+    .home-subject__meta {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+    }
+    .home-footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 0.8125rem;
+      color: var(--color-text-muted);
+      border-top: 1px solid var(--color-border-light);
+    }
+    @media (max-width: 768px) {
+      .home-modes { grid-template-columns: 1fr; max-width: 400px; }
+      .home-subjects__grid { grid-template-columns: 1fr; }
+      .home-hero__title { font-size: 1.75rem; }
+      .home-hero { padding: 40px 16px 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div style="min-height:100vh;display:flex;flex-direction:column;">
+    <header class="header" style="justify-content:center;">
+      <a href="home.html" class="header__logo">
+        <span class="header__logo-icon">408</span>
+        <span>考研学习系统</span>
+      </a>
+    </header>
+
+    <main style="flex:1;">
+      <div class="home-hero">
+        <div class="home-hero__icon">408</div>
+        <h1 class="home-hero__title">408 考研学习系统</h1>
+        <p class="home-hero__desc">涵盖数据结构、计算机组成原理、操作系统核心知识点，支持刷题练习、知识点浏览和知识图谱可视化</p>
+      </div>
+
+      <div class="home-modes">
+        <a href="index.html" class="home-mode">
+          <div class="home-mode__icon">&#9997;</div>
+          <h2 class="home-mode__title">刷题模式</h2>
+          <p class="home-mode__desc">逐题练习，显示答案后标记掌握进度，支持收藏、随机跳转、键盘快捷键</p>
+          <span class="home-mode__arrow">开始刷题 &rarr;</span>
+        </a>
+        <a href="notes.html" class="home-mode">
+          <div class="home-mode__icon">&#128218;</div>
+          <h2 class="home-mode__title">知识点浏览</h2>
+          <p class="home-mode__desc">按章节和知识点分组浏览全部内容，支持展开/折叠、全局搜索</p>
+          <span class="home-mode__arrow">浏览知识点 &rarr;</span>
+        </a>
+        <a href="graph.html" class="home-mode">
+          <div class="home-mode__icon">&#128506;</div>
+          <h2 class="home-mode__title">知识图谱</h2>
+          <p class="home-mode__desc">Canvas 可视化章节与知识点关系，支持缩放、拖拽、点击跳转</p>
+          <span class="home-mode__arrow">查看图谱 &rarr;</span>
+        </a>
+      </div>
+
+      <div class="home-subjects">
+        <p class="home-subjects__title">包含科目</p>
+        <div class="home-subjects__grid">
+          <a href="index.html?set=ds" class="home-subject">
+            <span class="home-subject__icon">&#127794;</span>
+            <div class="home-subject__info">
+              <div class="home-subject__name">数据结构</div>
+              <div class="home-subject__meta">537 题 · 约 45 分</div>
+            </div>
+          </a>
+          <a href="index.html?set=cs" class="home-subject">
+            <span class="home-subject__icon">&#128187;</span>
+            <div class="home-subject__info">
+              <div class="home-subject__name">计算机组成原理</div>
+              <div class="home-subject__meta">474 题 · 约 45 分</div>
+            </div>
+          </a>
+          <a href="index.html?set=os" class="home-subject">
+            <span class="home-subject__icon">&#128421;&#65039;</span>
+            <div class="home-subject__info">
+              <div class="home-subject__name">操作系统</div>
+              <div class="home-subject__meta">530 题 · 约 35 分</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </main>
+
+    <footer class="home-footer">
+      408 考研学习系统 &middot; 数据结构 · 计算机组成原理 · 操作系统
+    </footer>
+  </div>
+</body>
+</html>

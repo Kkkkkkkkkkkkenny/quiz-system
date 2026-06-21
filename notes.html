@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>408 知识点浏览</title>
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/notes.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <div class="app notes-layout">
+    <!-- Header -->
+    <header class="header">
+      <button class="menu-btn" id="menuBtn" aria-label="打开目录">
+        <span class="menu-btn__icon"></span>
+      </button>
+      <a href="home.html" class="header__logo">
+        <span class="header__logo-icon">408</span>
+        <span>考研学习</span>
+      </a>
+      <nav class="header__nav">
+        <a href="home.html" class="header__nav-item">首页</a>
+        <a href="index.html" class="header__nav-item">刷题模式</a>
+        <a href="notes.html" class="header__nav-item active">知识点浏览</a>
+        <a href="graph.html" class="header__nav-item">知识图谱</a>
+      </nav>
+      <div class="header__right">
+        <div class="search">
+          <svg class="search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+          <input type="text" class="search__input" id="searchInput" placeholder="搜索知识点..." aria-label="搜索知识点">
+          <span class="search__kbd">Ctrl+K</span>
+        </div>
+        <button class="theme-btn" id="themeBtn" aria-label="切换主题">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="theme-icon-light">
+            <circle cx="12" cy="12" r="5"></circle>
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="theme-icon-dark" style="display:none">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <nav class="nav-tree" id="navTree"></nav>
+    </aside>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Main Content -->
+    <main class="main notes-main">
+      <div class="main__content" id="contentArea">
+        <div class="empty-state">
+          <div class="empty-state__icon">&#128218;</div>
+          <h2 class="empty-state__title">欢迎使用知识点浏览</h2>
+          <p class="empty-state__desc">选择左侧科目开始学习，或使用搜索查找知识点</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Search Results -->
+    <div class="search-results" id="searchResults">
+      <div class="search-results__header">
+        <span class="search-results__count" id="searchCount"></span>
+        <button class="search-results__close" id="searchClose">关闭</button>
+      </div>
+      <div id="searchResultsList"></div>
+    </div>
+
+    <!-- Back to top -->
+    <button class="back-to-top" id="backToTop" aria-label="回到顶部">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 15l-6-6-6 6"></path>
+      </svg>
+    </button>
+  </div>
+
+  <script src="js/utils.js"></script>
+  <script src="js/notes.js"></script>
+</body>
+</html>

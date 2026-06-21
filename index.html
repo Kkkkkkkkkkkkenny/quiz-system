@@ -3,78 +3,96 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>知识点问答</title>
-  <link rel="stylesheet" href="style.css?v=7">
+  <title>408 考研刷题</title>
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/quiz.css">
+  <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
-  <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <div class="sidebar-header-left">
-        <span class="sidebar-title">目录</span>
-        <span class="sidebar-count" id="sidebarCount"></span>
-      </div>
-      <button class="sidebar-close" id="sidebarClose">&times;</button>
-    </div>
-    <div class="sidebar-search">
-      <input type="text" id="sidebarSearch" placeholder="搜索题目..." autocomplete="off">
-    </div>
-    <div class="sidebar-list" id="sidebarList"></div>
-  </div>
-
-  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
-
-  <div class="container">
-    <header>
-      <div class="header-top">
-        <div class="header-top-left">
-          <button class="sidebar-btn" id="sidebarToggle" aria-label="切换目录">☰</button>
-          <a href="graph.html" class="mode-btn" id="modeToggle" title="知识图谱">🗺️</a>
-        </div>
-        <select id="datasetSelect" class="dataset-select">
+  <div class="app quiz-layout">
+    <!-- Header -->
+    <header class="header">
+      <button class="menu-btn" id="menuBtn" aria-label="打开目录">
+        <span class="menu-btn__icon"></span>
+      </button>
+      <a href="home.html" class="header__logo">
+        <span class="header__logo-icon">408</span>
+        <span>考研学习</span>
+      </a>
+      <nav class="header__nav">
+        <a href="home.html" class="header__nav-item">首页</a>
+        <a href="index.html" class="header__nav-item active">刷题模式</a>
+        <a href="notes.html" class="header__nav-item">知识点浏览</a>
+        <a href="graph.html" class="header__nav-item">知识图谱</a>
+      </nav>
+      <div class="header__right">
+        <select id="datasetSelect" class="search__input" style="max-width:220px;padding-left:12px;border-radius:var(--radius-md);background:var(--color-gray-100);border:1px solid transparent;cursor:pointer;">
           <option>加载中...</option>
         </select>
+        <button class="theme-btn" id="themeBtn" aria-label="切换主题">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="theme-icon-light">
+            <circle cx="12" cy="12" r="5"></circle>
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="theme-icon-dark" style="display:none">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
       </div>
-      <h1 id="mainTitle">知识点问答</h1>
-      <p class="subtitle" id="mainSubtitle"></p>
     </header>
 
-    <div class="progress-bar">
-      <div class="progress-fill" id="progressFill"></div>
-    </div>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <nav class="nav-tree" id="navTree"></nav>
+    </aside>
 
-    <div class="card" id="card">
-      <div class="card-header">
-        <span class="topic-badge" id="topicBadge">通用</span>
-        <span class="card-header-right">
-          <span class="card-counter" id="counter">- / -</span>
-          <button class="bookmark-btn" id="bookmarkBtn" title="收藏">☆</button>
-        </span>
-      </div>
-      <div class="card-body">
-        <div class="question-area">
-          <p class="question-label">问题</p>
-          <p class="question-text" id="questionText">加载中...</p>
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Main Content -->
+    <main class="main">
+      <div class="main__content">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
         </div>
-        <div class="divider"></div>
-        <div class="answer-area" id="answerArea">
-          <p class="answer-label">答案</p>
-          <div class="answer-text" id="answerText"></div>
+
+        <div class="quiz-card" id="quizCard">
+          <div class="quiz-card__header">
+            <span class="quiz-card__topic" id="topicBadge">通用</span>
+            <span class="quiz-card__header-right">
+              <span class="quiz-card__counter" id="counter">- / -</span>
+              <button class="quiz-card__bookmark" id="bookmarkBtn" title="收藏" aria-label="收藏">&#9734;</button>
+            </span>
+          </div>
+          <div class="quiz-card__body">
+            <p class="quiz-card__question-label">问题</p>
+            <p class="quiz-card__question" id="questionText">加载中...</p>
+            <div class="quiz-card__divider"></div>
+            <div class="quiz-card__answer" id="answerArea">
+              <p class="quiz-card__answer-label">答案</p>
+              <div class="quiz-card__answer-text" id="answerText"></div>
+            </div>
+          </div>
+          <div class="quiz-card__actions">
+            <button class="btn btn-primary" id="revealBtn">显示答案</button>
+          </div>
         </div>
-      </div>
-      <div class="card-actions">
-        <button class="btn btn-primary" id="revealBtn">显示答案</button>
-      </div>
-    </div>
 
-    <div class="nav-controls">
-      <button class="btn btn-secondary" id="prevBtn">上一题</button>
-      <button class="btn btn-secondary" id="randomBtn">随机</button>
-      <button class="btn btn-secondary" id="nextBtn">下一题</button>
-    </div>
+        <div class="quiz-nav">
+          <button class="btn btn-secondary" id="prevBtn">上一题</button>
+          <button class="btn btn-secondary" id="randomBtn">随机</button>
+          <button class="btn btn-secondary" id="nextBtn">下一题</button>
+        </div>
 
-    <div class="progress-text" id="progressText"></div>
+        <p class="quiz-progress-text" id="progressText"></p>
+      </div>
+    </main>
   </div>
 
-  <script src="app.es5.js?v=7"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/quiz.js"></script>
 </body>
 </html>

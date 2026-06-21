@@ -199,6 +199,10 @@ def main():
     class Handler(DataHandler, base):
         pass
 
+    # 目录模式下默认跳转到 home.html
+    if not index and os.path.isfile("home.html"):
+        index = "home.html"
+
     if index:
         class RedirectHandler(Handler):  # type: ignore
             def do_GET(self):

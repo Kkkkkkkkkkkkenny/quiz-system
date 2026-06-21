@@ -1,0 +1,29 @@
+[
+  {
+    "id": "ds",
+    "name": "数据结构",
+    "slug": "ds",
+    "file": "data/ds.json",
+    "icon": "tree",
+    "points": 45,
+    "description": "线性表、栈、队列、数组、树、图、查找、排序"
+  },
+  {
+    "id": "cs",
+    "name": "计算机组成原理",
+    "slug": "cs",
+    "file": "data/ds-cs.json",
+    "icon": "cpu",
+    "points": 45,
+    "description": "数据表示、存储器、指令系统、CPU、总线、I/O"
+  },
+  {
+    "id": "os",
+    "name": "操作系统",
+    "slug": "os",
+    "file": "data/os.json",
+    "icon": "monitor",
+    "points": 35,
+    "description": "进程管理、内存管理、文件管理、I/O管理"
+  }
+]
