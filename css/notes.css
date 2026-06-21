@@ -1,15 +1,27 @@
 /* ====== Notes Mode - 笔记式阅读 ====== */
 
 .notes-layout {
-  grid-template-columns: var(--sidebar-width) 1fr;
+  grid-template-columns: 1fr;
 }
 
 .notes-layout .sidebar {
-  grid-column: 1;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--sidebar-width);
+  height: 100vh;
+  z-index: 100;
+  transform: translateX(-100%);
+  transition: transform var(--transition-normal);
+  padding-top: var(--space-6);
+}
+
+.notes-layout .sidebar.open {
+  transform: translateX(0);
 }
 
 .notes-main {
-  grid-column: 2;
+  grid-column: 1;
 }
 
 /* 章节笔记区域 */
