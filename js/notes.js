@@ -209,70 +209,36 @@
       html += '<span>' + U.escapeHTML(chapterName) + '</span>';
       html += '</div>';
 
-      html += '<h1 style="margin-bottom:8px;">' + U.escapeHTML(chapterName) + '</h1>';
-      html += '<p style="color:var(--color-text-secondary);margin-bottom:16px;">共 ' + items.length + ' 个知识点，分为 ' + topicKeys.length + ' 个知识点分组</p>';
+      html += '<h1>' + U.escapeHTML(chapterName) + '</h1>';
 
-      // Expand/collapse controls
-      html += '<div class="topic-controls">';
-      html += '<button class="topic-controls__btn" id="expandAll">全部展开</button>';
-      html += '<button class="topic-controls__btn" id="collapseAll">全部折叠</button>';
-      html += '</div>';
-
-      // Render topics
+      // Render topics as note sections
       for (var t = 0; t < topicKeys.length; t++) {
         var topicName = topicKeys[t];
         var topicItems = topics[topicName];
 
-        html += '<div class="topic-section" data-topic="' + U.escapeHTML(topicName) + '">';
-        html += '<div class="topic-section__header" onclick="this.parentNode.classList.toggle(\'collapsed\')">';
-        html += '<span class="topic-section__title">' + U.escapeHTML(topicName) + '</span>';
-        html += '<span style="display:flex;align-items:center;gap:8px;">';
-        html += '<span class="topic-section__count">' + topicItems.length + '</span>';
-        html += '<span class="topic-section__arrow">▼</span>';
-        html += '</span>';
-        html += '</div>';
-        html += '<div class="topic-section__body">';
+        html += '<div class="note-section" data-topic="' + U.escapeHTML(topicName) + '">';
+        html += '<h2 class="note-section__title">' + U.escapeHTML(topicName) + '</h2>';
 
         for (var j = 0; j < topicItems.length; j++) {
           var item = topicItems[j];
-          html += '<div class="qa-item" data-id="' + item.id + '">';
-          html += '<div class="qa-item__question" onclick="this.parentNode.classList.toggle(\'expanded\')">';
-          html += '<span class="qa-item__num">' + item.id + '</span>';
-          html += '<span class="qa-item__q-text">' + renderLatex(U.escapeHTML(item.question)) + '</span>';
-          html += '<span class="qa-item__toggle">▼</span>';
-          html += '</div>';
-          html += '<div class="qa-item__answer">';
-          html += '<div class="qa-item__answer-text">' + formatAnswer(item.answer) + '</div>';
-          html += '</div>';
+          html += '<div class="note-qa">';
+          html += '<h3 class="note-qa__question">' + renderLatex(U.escapeHTML(item.question)) + '</h3>';
+          html += '<div class="note-qa__answer">' + formatAnswer(item.answer) + '</div>';
           html += '</div>';
         }
 
-        html += '</div></div>';
+        html += '</div>';
       }
 
       content.innerHTML = html;
-
-      // Bind expand/collapse all
-      var expandBtn = U.$('#expandAll');
-      var collapseBtn = U.$('#collapseAll');
-      if (expandBtn) expandBtn.addEventListener('click', function() {
-        U.$$('.topic-section').forEach(function(el) { el.classList.remove('collapsed'); });
-        U.$$('.qa-item').forEach(function(el) { el.classList.add('expanded'); });
-      });
-      if (collapseBtn) collapseBtn.addEventListener('click', function() {
-        U.$$('.topic-section').forEach(function(el) { el.classList.add('collapsed'); });
-        U.$$('.qa-item').forEach(function(el) { el.classList.remove('expanded'); });
-      });
-
       window.scrollTo(0, 0);
 
       // Handle ?topic= parameter
       var params = new URLSearchParams(window.location.search);
       var targetTopic = params.get('topic');
       if (targetTopic) {
-        var target = U.$('.topic-section[data-topic="' + targetTopic + '"]');
+        var target = U.$('.note-section[data-topic="' + targetTopic + '"]');
         if (target) {
-          target.classList.remove('collapsed');
           target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       }
