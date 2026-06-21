@@ -222,7 +222,7 @@
         var topicName = topicKeys[t];
         var topicItems = topics[topicName];
 
-        html += '<div class="note-section" data-topic="' + U.escapeHTML(topicName) + '">';
+        html += '<div class="note-section" id="topic-' + encodeURIComponent(topicName) + '" data-topic="' + U.escapeHTML(topicName) + '">';
         html += '<h2 class="note-section__title">' + U.escapeHTML(topicName) + '</h2>';
 
         for (var j = 0; j < topicItems.length; j++) {
@@ -296,15 +296,14 @@
         for (var ti = 0; ti < tKeys.length; ti++) {
           var topicName = tKeys[ti];
           var topicCount = topics[topicName].length;
+          var anchorId = 'topic-' + encodeURIComponent(topicName);
           var linkHref;
           if (onChapterPage) {
-            // Already on chapter page: use anchor link to scroll to topic
-            linkHref = '#scroll-' + encodeURIComponent(topicName);
+            linkHref = '#' + anchorId;
           } else {
-            // On subject page: navigate to chapter page
             linkHref = '#/' + subject.id + '/' + chIdx;
           }
-          html += '<a href="' + linkHref + '" class="sidebar__item sidebar__item--topic" data-topic="' + U.escapeHTML(topicName) + '" style="padding-left:24px;font-size:12px;">';
+          html += '<a href="' + linkHref + '" class="sidebar__item sidebar__item--topic" style="padding-left:24px;font-size:12px;">';
           html += U.escapeHTML(topicName) + ' <span style="color:var(--color-text-muted);font-size:11px;">(' + topicCount + ')</span>';
           html += '</a>';
         }
@@ -315,19 +314,11 @@
       html += '</div>';
       navTree.innerHTML = html;
 
-      // Bind topic anchor clicks to scroll and close sidebar
-      var topicLinks = navTree.querySelectorAll('.sidebar__item--topic');
-      for (var k = 0; k < topicLinks.length; k++) {
-        topicLinks[k].addEventListener('click', function(e) {
-          var topic = this.getAttribute('data-topic');
-          if (onChapterPage && topic) {
-            e.preventDefault();
-            var target = U.$('[data-topic="' + topic + '"]');
-            if (target) {
-              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-            U.closeSidebar();
-          }
+      // Close sidebar when any sidebar link is clicked
+      var allLinks = navTree.querySelectorAll('.sidebar__item');
+      for (var k = 0; k < allLinks.length; k++) {
+        allLinks[k].addEventListener('click', function() {
+          U.closeSidebar();
         });
       }
     });
