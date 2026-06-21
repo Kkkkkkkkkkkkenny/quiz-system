@@ -264,6 +264,7 @@
     U.fetchJSON(subject.file).then(function(data) {
       var questions = Array.isArray(data) ? data : (data.questions || []);
       var chapters = buildChapterMap(questions);
+      var onChapterPage = state.currentChapter !== null;
 
       var html = '<div class="sidebar__section">';
       html += '<div class="sidebar__section-title">' + U.escapeHTML(subject.name) + '</div>';
@@ -287,8 +288,18 @@
         }
         var tKeys = Object.keys(topics);
         for (var ti = 0; ti < tKeys.length; ti++) {
-          html += '<a href="#/' + subject.id + '/' + chIdx + '" class="sidebar__item" style="padding-left:24px;font-size:12px;">';
-          html += U.escapeHTML(tKeys[ti]) + ' <span style="color:var(--color-text-muted);font-size:11px;">(' + topics[tKeys[ti]].length + ')</span>';
+          var topicName = tKeys[ti];
+          var topicCount = topics[topicName].length;
+          var linkHref;
+          if (onChapterPage) {
+            // Already on chapter page: use anchor link to scroll to topic
+            linkHref = '#scroll-' + encodeURIComponent(topicName);
+          } else {
+            // On subject page: navigate to chapter page
+            linkHref = '#/' + subject.id + '/' + chIdx;
+          }
+          html += '<a href="' + linkHref + '" class="sidebar__item sidebar__item--topic" data-topic="' + U.escapeHTML(topicName) + '" style="padding-left:24px;font-size:12px;">';
+          html += U.escapeHTML(topicName) + ' <span style="color:var(--color-text-muted);font-size:11px;">(' + topicCount + ')</span>';
           html += '</a>';
         }
 
@@ -297,6 +308,22 @@
 
       html += '</div>';
       navTree.innerHTML = html;
+
+      // Bind topic anchor clicks to scroll and close sidebar
+      var topicLinks = navTree.querySelectorAll('.sidebar__item--topic');
+      for (var k = 0; k < topicLinks.length; k++) {
+        topicLinks[k].addEventListener('click', function(e) {
+          var topic = this.getAttribute('data-topic');
+          if (onChapterPage && topic) {
+            e.preventDefault();
+            var target = U.$('[data-topic="' + topic + '"]');
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            U.closeSidebar();
+          }
+        });
+      }
     });
   }
 
