@@ -239,9 +239,14 @@
       content.innerHTML = html;
       window.scrollTo(0, 0);
 
-      // Handle ?topic= parameter
-      var params = new URLSearchParams(window.location.search);
-      var targetTopic = params.get('topic');
+      // Handle ?topic= parameter (from hash, e.g. #/ds/0?topic=xxx)
+      var targetTopic = null;
+      var hashStr = location.hash || '';
+      var qIdx = hashStr.indexOf('?');
+      if (qIdx !== -1) {
+        var hashParams = new URLSearchParams(hashStr.substring(qIdx));
+        targetTopic = hashParams.get('topic');
+      }
       if (targetTopic) {
         var target = U.$('.note-section[data-topic="' + targetTopic + '"]');
         if (target) {
@@ -301,7 +306,7 @@
           if (isCurrentChapter) {
             linkHref = 'javascript:void(0)';
           } else {
-            linkHref = '#/' + subject.id + '/' + chIdx;
+            linkHref = '#/' + subject.id + '/' + chIdx + '?topic=' + encodeURIComponent(topicName);
           }
           html += '<a href="' + linkHref + '" class="sidebar__item sidebar__item--topic" data-topic="' + U.escapeHTML(topicName) + '" data-chapter-idx="' + c + '" style="padding-left:24px;font-size:12px;">';
           html += U.escapeHTML(topicName) + ' <span style="color:var(--color-text-muted);font-size:11px;">(' + topicCount + ')</span>';
