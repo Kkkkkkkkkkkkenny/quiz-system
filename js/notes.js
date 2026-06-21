@@ -296,13 +296,14 @@
         for (var ti = 0; ti < tKeys.length; ti++) {
           var topicName = tKeys[ti];
           var topicCount = topics[topicName].length;
+          var isCurrentChapter = (state.currentChapterIdx === c);
           var linkHref;
-          if (onChapterPage) {
+          if (isCurrentChapter) {
             linkHref = 'javascript:void(0)';
           } else {
             linkHref = '#/' + subject.id + '/' + chIdx;
           }
-          html += '<a href="' + linkHref + '" class="sidebar__item sidebar__item--topic" data-topic="' + U.escapeHTML(topicName) + '" style="padding-left:24px;font-size:12px;">';
+          html += '<a href="' + linkHref + '" class="sidebar__item sidebar__item--topic" data-topic="' + U.escapeHTML(topicName) + '" data-chapter-idx="' + c + '" style="padding-left:24px;font-size:12px;">';
           html += U.escapeHTML(topicName) + ' <span style="color:var(--color-text-muted);font-size:11px;">(' + topicCount + ')</span>';
           html += '</a>';
         }
@@ -318,14 +319,19 @@
       for (var k = 0; k < allLinks.length; k++) {
         allLinks[k].addEventListener('click', function(e) {
           var topic = this.getAttribute('data-topic');
-          if (onChapterPage && topic) {
+          var chapterIdx = this.getAttribute('data-chapter-idx');
+          var isCurrentChapter = (chapterIdx !== null && parseInt(chapterIdx, 10) === state.currentChapterIdx);
+
+          if (isCurrentChapter && topic) {
+            // Same chapter: scroll to topic
             e.preventDefault();
             var target = U.$('.note-section[data-topic="' + topic + '"]');
             if (target) {
               target.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
+            U.closeSidebar();
           }
-          U.closeSidebar();
+          // Different chapter: let the default href navigation work
         });
       }
     });
