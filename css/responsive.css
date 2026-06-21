@@ -1,6 +1,8 @@
 /* ====== Responsive ====== */
 
+/* Tablet & below: ≤ 1024px */
 @media (max-width: 1024px) {
+  /* Notes: sidebar becomes overlay */
   .notes-layout {
     grid-template-columns: 1fr;
   }
@@ -13,6 +15,7 @@
     height: 100vh;
     z-index: 100;
     transform: translateX(-100%);
+    transition: transform var(--transition-normal);
     padding-top: var(--space-6);
   }
 
@@ -22,10 +25,6 @@
 
   .notes-main {
     grid-column: 1;
-  }
-
-  .menu-btn {
-    display: flex;
   }
 
   .header__nav {
@@ -41,6 +40,7 @@
   }
 }
 
+/* Mobile: ≤ 768px */
 @media (max-width: 768px) {
   :root {
     --header-height: 52px;
@@ -124,16 +124,9 @@
   .breadcrumb {
     font-size: var(--text-xs);
   }
-
-  .topic-section__header {
-    padding: var(--space-3);
-  }
-
-  .qa-item__question {
-    padding: var(--space-3);
-  }
 }
 
+/* Small mobile: ≤ 480px */
 @media (max-width: 480px) {
   .header__right {
     gap: var(--space-1);

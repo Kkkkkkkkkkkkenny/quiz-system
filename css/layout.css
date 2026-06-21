@@ -94,11 +94,11 @@
   margin-left: auto;
 }
 
-/* Menu button (mobile) */
+/* Menu button */
 .menu-btn {
-  display: none;
   width: 36px;
   height: 36px;
+  display: flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-md);
