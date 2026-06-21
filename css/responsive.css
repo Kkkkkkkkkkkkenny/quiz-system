@@ -2,31 +2,6 @@
 
 /* Tablet & below: ≤ 1024px */
 @media (max-width: 1024px) {
-  /* Notes: sidebar becomes overlay */
-  .notes-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .notes-layout .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: var(--sidebar-width);
-    height: 100vh;
-    z-index: 100;
-    transform: translateX(-100%);
-    transition: transform var(--transition-normal);
-    padding-top: var(--space-6);
-  }
-
-  .notes-layout .sidebar.open {
-    transform: translateX(0);
-  }
-
-  .notes-main {
-    grid-column: 1;
-  }
-
   .header__nav {
     display: none;
   }
