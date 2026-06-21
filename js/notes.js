@@ -83,16 +83,22 @@
     });
 
     if (!subjectId) {
+      state.currentChapter = null;
+      state.currentChapterIdx = null;
       renderHome();
       renderSidebar(null);
     } else {
       var subject = findSubject(subjectId);
-      if (!subject) { renderHome(); renderSidebar(null); return; }
+      if (!subject) { state.currentChapter = null; state.currentChapterIdx = null; renderHome(); renderSidebar(null); return; }
       state.currentSubject = subject;
 
       if (chapterIdx !== null) {
-        loadAndRenderChapter(subject, parseInt(chapterIdx, 10));
+        state.currentChapter = '__loading__';
+        state.currentChapterIdx = parseInt(chapterIdx, 10);
+        loadAndRenderChapter(subject, state.currentChapterIdx);
       } else {
+        state.currentChapter = null;
+        state.currentChapterIdx = null;
         loadAndRenderSubject(subject);
       }
       renderSidebar(subject);
@@ -274,7 +280,7 @@
         var chName = chKeys[c];
         var chIdx = c;
         var items = chapters[chName];
-        var isActive = state.currentChapter === chName;
+        var isActive = (state.currentChapterIdx === c);
 
         html += '<details' + (isActive ? ' open' : '') + '>';
         html += '<summary class="nav-chapter"><span>' + U.escapeHTML(chName) + '</span></summary>';
