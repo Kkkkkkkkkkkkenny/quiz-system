@@ -73,7 +73,9 @@
 
   function handleRoute() {
     var hash = location.hash.replace(/^#\/?/, '');
-    var parts = hash.split('/');
+    var qIdx = hash.indexOf('?');
+    var hashPath = qIdx !== -1 ? hash.substring(0, qIdx) : hash;
+    var parts = hashPath.split('/');
     var subjectId = parts[0] || null;
     var chapterIdx = parts[1] || null;
 
@@ -121,7 +123,7 @@
     content.innerHTML = '<div class="home">' +
       '<div class="home__hero">' +
         '<h1 class="home__title">408 考研知识库</h1>' +
-        '<p class="home__subtitle">涵盖数据结构、计算机组成原理、操作系统全部大纲知识点，支持问答浏览与搜索</p>' +
+        '<p class="home__subtitle">涵盖数据结构、计算机组成原理、操作系统、计算机网络全部大纲知识点，支持问答浏览与搜索</p>' +
       '</div>' +
       '<div class="home__subjects">' +
       state.subjects.map(function(s) {
@@ -227,7 +229,11 @@
 
         for (var j = 0; j < topicItems.length; j++) {
           var item = topicItems[j];
-          html += '<div class="note-qa">';
+          // 生成唯一 id: topic + question 前20字符的 hash
+          var qHash = (topicName + item.question).split('').reduce(function(a, c) { return ((a << 5) - a) + c.charCodeAt(0); }, 0);
+          var qId = 'q-' + Math.abs(qHash).toString(36);
+          item._id = qId; // 保存 id 供搜索使用
+          html += '<div class="note-qa" id="' + qId + '">';
           html += '<h3 class="note-qa__question">' + renderLatex(U.escapeHTML(item.question)) + '</h3>';
           html += '<div class="note-qa__answer">' + formatAnswer(item.answer) + '</div>';
           html += '</div>';
@@ -239,18 +245,31 @@
       content.innerHTML = html;
       window.scrollTo(0, 0);
 
-      // Handle ?topic= parameter (from hash, e.g. #/ds/0?topic=xxx)
+      // Handle ?topic= and ?q= parameters
       var targetTopic = null;
+      var targetQId = null;
       var hashStr = location.hash || '';
       var qIdx = hashStr.indexOf('?');
       if (qIdx !== -1) {
         var hashParams = new URLSearchParams(hashStr.substring(qIdx));
         targetTopic = hashParams.get('topic');
+        targetQId = hashParams.get('q');
       }
-      if (targetTopic) {
-        var target = U.$('.note-section[data-topic="' + targetTopic + '"]');
+      if (targetQId) {
+        // 精确定位到具体 question
+        var target = document.getElementById(targetQId);
         if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          setTimeout(function() {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 50);
+        }
+      } else if (targetTopic) {
+        // 定位到 topic section
+        var target = document.querySelector('.note-section[data-topic="' + CSS.escape(targetTopic) + '"]');
+        if (target) {
+          setTimeout(function() {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 50);
         }
       }
     }).catch(function(err) {
@@ -362,6 +381,9 @@
             var q = items[i];
             var text = ((q.question || '') + ' ' + (q.answer || '') + ' ' + (q.topic || '')).toLowerCase();
             if (text.indexOf(query) !== -1) {
+              // 计算 question 的唯一 id（与渲染时一致）
+              var qHash = ((q.topic || '') + q.question).split('').reduce(function(a, c) { return ((a << 5) - a) + c.charCodeAt(0); }, 0);
+              q._id = 'q-' + Math.abs(qHash).toString(36);
               results.push({
                 subject: subject,
                 chapter: chKeys[c],
@@ -393,7 +415,7 @@
       list.innerHTML = results.slice(0, 30).map(function(r) {
         var snippet = r.question.question;
         if (snippet.length > 80) snippet = snippet.substring(0, 80) + '...';
-        return '<a href="#/' + r.subject.id + '/' + r.chapterIdx + '" class="search-results__item" onclick="QuizUtils.closeSidebar();document.getElementById(\'searchResults\').classList.remove(\'visible\');">' +
+        return '<a href="#/' + r.subject.id + '/' + r.chapterIdx + '?topic=' + encodeURIComponent(r.question.topic || '') + '&q=' + (r.question._id || '') + '" class="search-results__item" onclick="QuizUtils.closeSidebar();document.getElementById(\'searchResults\').classList.remove(\'visible\');">' +
           '<div class="search-results__item-breadcrumb">' + U.escapeHTML(r.subject.name) + ' / ' + U.escapeHTML(r.chapter) + ' / ' + U.escapeHTML(r.question.topic || '') + '</div>' +
           '<div class="search-results__item-title">' + U.highlightText(U.escapeHTML(r.question.question.substring(0, 60)), query) + '</div>' +
           '<div class="search-results__item-snippet">' + U.highlightText(U.escapeHTML(snippet), query) + '</div>' +
