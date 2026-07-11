@@ -1,5 +1,13 @@
 [
   {
+    "id": "os-notes",
+    "file": "data/os-notes.json",
+    "title": "操作系统 · 知识点笔记",
+    "subject": "操作系统",
+    "description": "67 个知识点主题（从笔记提取）",
+    "count": 67
+  },
+  {
     "id": "ds",
     "file": "data/ds.json",
     "title": "408 数据结构 · 究极粒度",
@@ -38,5 +46,13 @@
     "subject": "408 计算机组成原理",
     "description": "474 道考研 408 计算机组成原理究极低粒度概念题（7 章全覆盖）",
     "count": 474
+  },
+  {
+    "id": "cn",
+    "file": "data/cn.json",
+    "title": "408 计算机网络 · 究极粒度",
+    "subject": "408 计算机网络",
+    "description": "778 道考研 408 计算机网络究极低粒度概念题（6 章全覆盖）",
+    "count": 778
   }
 ]
